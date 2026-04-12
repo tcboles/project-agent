@@ -58,7 +58,25 @@ For each ready ticket, match its `category` field to an agent `id`:
 - If the category matches a project-specific agent (e.g., `frontend-dev`), use that.
 - If no match, fall back to `developer` for implementation work or `architect` for design work.
 
-### Step 5: Dispatch Agents (Up to 3 in Parallel)
+### Step 5: Present Plan and Get Approval
+
+**Do NOT dispatch agents yet.** Present the user with a summary of what you're about to do:
+
+```
+## Ready to Assign — {project-name}
+
+| Ticket | Title | Agent | Priority | Complexity |
+|--------|-------|-------|----------|------------|
+| PA-001 | ...   | architect | P0 | small |
+| PA-004 | ...   | developer | P1 | medium |
+| PA-005 | ...   | developer | P1 | medium |
+
+Agents will work in isolated git worktrees. Up to 3 will run in parallel.
+```
+
+Then ask: **"Ready to dispatch these tickets?"** using AskUserQuestion. Only proceed to Step 6 if the user approves. If they want changes (e.g., skip a ticket, change priority, reassign an agent), make those adjustments first and re-present.
+
+### Step 6: Dispatch Agents (Up to 3 in Parallel)
 
 For each ticket being dispatched:
 
@@ -113,14 +131,14 @@ You are working in the project at {project root path}. Explore the codebase befo
 4. If you encounter a blocker, describe it clearly so it can be addressed.
 ```
 
-6. **After agent completes**, update board.json:
+7. **After agent completes**, update board.json:
    - Set ticket `status` to `review` (if the agent reports success) or `blocked` (if the agent reports a blocker)
    - Set ticket `updated_at` to current ISO timestamp
    - Set agent `status` to `idle`
    - Set agent `current_ticket` to `null`
    - If the agent reported blockers, add them to the ticket's notes
 
-### Step 6: Report Results
+### Step 7: Report Results
 
 After all dispatched agents complete, show:
 - Which tickets were dispatched and to which agents

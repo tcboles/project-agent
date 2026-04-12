@@ -50,7 +50,25 @@ For each branch, before merging:
 2. **Run tests** — checkout the branch, run the project's test suite. If tests fail, flag the branch as needing rework.
 3. **Check diff size** — `git diff main...{branch} --stat` to show what changed.
 
-### Step 4: Merge Strategy
+### Step 4: Present Merge Plan and Get Approval
+
+**Do NOT merge yet.** Show the user what will be merged:
+
+```
+## Ready to Merge — {project-name}
+
+| Ticket | Branch | Files Changed | Conflicts? |
+|--------|--------|---------------|------------|
+| PA-001 | claude-worktree-... | 5 files | No |
+| PA-003 | claude-worktree-... | 3 files | Yes (src/router.ts) |
+
+Merge order: PA-001 → PA-003 (dependency order)
+A restore tag will be created before merging.
+```
+
+Ask: **"Ready to merge these branches?"** using AskUserQuestion. If there are conflicts, highlight them and ask how to handle each one before proceeding.
+
+### Step 5: Merge Strategy
 
 **Clean merges (no conflicts):**
 1. `git merge --no-ff {branch} -m "Merge PA-NNN: {ticket title}"`
@@ -66,7 +84,7 @@ For each branch, before merging:
    - **Defer** — skip this branch and merge others first. The conflict may resolve itself after other merges land.
 3. After resolution, run tests to verify.
 
-### Step 5: Cleanup
+### Step 6: Cleanup
 
 After successful merges:
 
@@ -74,7 +92,7 @@ After successful merges:
 2. Update board.json: add `merged_at` timestamp to merged tickets (in the notes section).
 3. Remove cleaned-up worktrees.
 
-### Step 6: Report Results
+### Step 7: Report Results
 
 ```
 ## Merge Results — {project-name}

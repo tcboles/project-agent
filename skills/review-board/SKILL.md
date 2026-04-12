@@ -39,7 +39,25 @@ For each ticket in review:
 2. **Read the handoff notes** — the `## Handoff Notes` section in the ticket. This tells you what files changed and what decisions were made.
 3. **Read the reviewer agent definition** from `@plugin/agents/reviewer.md`.
 
-### Step 3: Dispatch Reviewer Agent
+### Step 3: Present Review Plan and Get Approval
+
+**Do NOT dispatch reviewers yet.** Show the user what will be reviewed:
+
+```
+## Ready for Review — {project-name}
+
+| Ticket | Title | Agent That Completed | Priority |
+|--------|-------|----------------------|----------|
+| PA-001 | ...   | developer            | P0       |
+| PA-003 | ...   | developer            | P1       |
+
+The reviewer agent will check each ticket against its acceptance criteria,
+run tests, and produce a verdict (APPROVE, REQUEST_CHANGES, or BLOCK).
+```
+
+Ask: **"Ready to run reviews on these tickets?"** using AskUserQuestion. Only proceed if the user approves.
+
+### Step 4: Dispatch Reviewer Agent
 
 For each ticket in review (up to 3 in parallel):
 
@@ -78,7 +96,7 @@ Write your review in the format specified in your role definition.
 End with a clear verdict: APPROVE, REQUEST_CHANGES, or BLOCK.
 ```
 
-### Step 4: Process Review Results
+### Step 5: Process Review Results
 
 For each completed review:
 
@@ -103,7 +121,7 @@ In all cases:
 - Set the reviewer agent `status` to `idle`
 - Set the reviewer agent `current_ticket` to `null`
 
-### Step 5: Report Results
+### Step 6: Report Results
 
 Show a summary:
 
