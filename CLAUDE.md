@@ -102,6 +102,12 @@ Settings are loaded from two levels (workspace overrides global):
 
 When reading config, load global first, then merge workspace config on top (workspace values override global). If no config file exists at either level, use the defaults above.
 
+**Users can ask to view or change config in natural language.** When they do:
+
+- "show my config" / "what's my config" → Read both config files and display the merged result, noting which values come from global vs workspace.
+- "set max agents to 3" / "disable the reviewer" / "use opus for architect" → Update the appropriate config file. Default to workspace config (`{cwd}/.project-agent/config.json`) unless the user says "globally". Create the file if it doesn't exist — only write the changed keys, not the full defaults.
+- "reset config" → Delete the workspace config file so global defaults apply.
+
 ## How It Works
 
 ### Core Workflow
