@@ -5,14 +5,25 @@ Claude Code plugin for AI-driven project management. Break projects into tickets
 ## Installation
 
 ```bash
-# Add the marketplace
-claude plugin marketplace add /path/to/project-agent
+# Register the plugin source
+claude plugin marketplace add tcboles/project-agent
 
 # Install the plugin
 claude plugin install project-agent@project-agent
 ```
 
-Or use it for a single session without installing:
+Restart Claude Code after installing to pick up the new skills.
+
+### Alternative Methods
+
+Install from a local clone:
+
+```bash
+claude plugin marketplace add /path/to/project-agent
+claude plugin install project-agent@project-agent
+```
+
+Try it for a single session without installing:
 
 ```bash
 claude --plugin-dir /path/to/project-agent
@@ -20,25 +31,24 @@ claude --plugin-dir /path/to/project-agent
 
 ## Quick Start
 
+You provide the commands — Claude does the work. Each step is a single slash command.
+
 ```
-# 1. Plan a project — Claude asks questions, then generates tickets
 /plan-project mobile-app
-
-# 2. Dispatch the first wave of tickets to agents
-/assign-work mobile-app
-
-# 3. Check progress
-/check-status mobile-app
-
-# 4. Review completed work before marking it done
-/review-board mobile-app
-
-# 5. Dispatch the next wave (dependencies now satisfied)
-/assign-work mobile-app
-
-# 6. Merge all completed worktrees into main
-/merge-work mobile-app
 ```
+
+Claude asks clarifying questions about your project, designs the architecture, and generates a full board of dependency-ordered tickets. You review and approve the plan.
+
+From there, you drive the board through its lifecycle:
+
+```
+/assign-work mobile-app      # dispatches ready tickets to agents in worktrees
+/check-status mobile-app     # see what's done, in progress, or blocked
+/review-board mobile-app     # run code reviews on completed tickets
+/merge-work mobile-app       # merge finished worktrees into main
+```
+
+Run `/assign-work` again after each wave completes to dispatch the next batch of tickets whose dependencies are now satisfied. Repeat until the board is clear.
 
 ## Skills
 
