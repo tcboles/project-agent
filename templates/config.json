@@ -1,0 +1,13 @@
+{
+  "max_concurrent_agents": 6,
+  "default_model": "sonnet",
+  "agents": {
+    "architect": { "enabled": true, "model": null },
+    "developer": { "enabled": true, "model": null },
+    "tester": { "enabled": true, "model": null },
+    "reviewer": { "enabled": true, "model": null }
+  },
+  "auto_review": true,
+  "auto_merge": false,
+  "ticket_id_prefix": "PA"
+}

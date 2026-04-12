@@ -39,6 +39,10 @@ For each ticket in review:
 2. **Read the handoff notes** — the `## Handoff Notes` section in the ticket. This tells you what files changed and what decisions were made.
 3. **Read the reviewer agent definition** from `@plugin/agents/reviewer.md`.
 
+### Step 2.5: Load Configuration
+
+Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merge workspace over global. Check if `agents.reviewer.enabled` is `false` — if so, skip reviews and move tickets directly from `review` to `done`.
+
 ### Step 3: Present Review Plan and Get Approval
 
 **Do NOT dispatch reviewers yet.** Show the user what will be reviewed:
@@ -61,7 +65,7 @@ Ask: **"Ready to run reviews on these tickets?"** using AskUserQuestion. Only pr
 
 **IMPORTANT: Launch all reviewer agents concurrently.** Prepare all prompts first, update board.json for all tickets, then make **multiple Agent tool calls in a single message** so they run in parallel.
 
-For up to 6 tickets at a time:
+For up to `max_concurrent_agents` tickets at a time (from config, default 6):
 
 1. **Update board.json for ALL tickets BEFORE launching:**
    - Set ticket `assigned_agent` to `reviewer`

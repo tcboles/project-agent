@@ -144,6 +144,41 @@ When agents discover something non-obvious about a codebase, they record it so f
 
 Agents read all three tiers before starting work and append to the most specific tier that applies.
 
+## Configuration
+
+Settings are loaded from two levels (workspace overrides global):
+
+- **Global**: `~/.claude/project-agent/config.json`
+- **Workspace**: `{cwd}/.project-agent/config.json`
+
+```json
+{
+  "max_concurrent_agents": 6,
+  "default_model": "sonnet",
+  "agents": {
+    "architect": { "enabled": true, "model": null },
+    "developer": { "enabled": true, "model": null },
+    "tester": { "enabled": true, "model": null },
+    "reviewer": { "enabled": true, "model": null }
+  },
+  "auto_review": true,
+  "auto_merge": false,
+  "ticket_id_prefix": "PA"
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `max_concurrent_agents` | `6` | Max agents dispatched in parallel per wave |
+| `default_model` | `"sonnet"` | Model for agents unless overridden per-agent |
+| `agents.{name}.enabled` | `true` | Set `false` to skip this agent type entirely |
+| `agents.{name}.model` | `null` | Override model for a specific agent (`null` = use default) |
+| `auto_review` | `true` | Automatically run reviews after agents complete |
+| `auto_merge` | `false` | Automatically merge after all tickets are done (skips merge approval) |
+| `ticket_id_prefix` | `"PA"` | Prefix for ticket IDs (e.g., change to `MW` for marketing-website) |
+
+To reduce parallelism (e.g., on a slower machine), set `max_concurrent_agents` to `2` or `3`. To skip code reviews entirely, set `agents.reviewer.enabled` to `false`.
+
 ## Ticket Lifecycle
 
 ```

@@ -67,6 +67,41 @@ Agents append to the most specific tier that applies. Each learning entry includ
 
 Default agent definitions (architect, developer, tester, reviewer) live in the plugin directory at `agents/`. The board references them with an `@plugin/` prefix in `definition_file`.
 
+### Configuration
+
+Settings are loaded from two levels (workspace overrides global):
+
+1. **Global**: `~/.claude/project-agent/config.json`
+2. **Workspace**: `{cwd}/.project-agent/config.json`
+
+```json
+{
+  "max_concurrent_agents": 6,
+  "default_model": "sonnet",
+  "agents": {
+    "architect": { "enabled": true, "model": null },
+    "developer": { "enabled": true, "model": null },
+    "tester": { "enabled": true, "model": null },
+    "reviewer": { "enabled": true, "model": null }
+  },
+  "auto_review": true,
+  "auto_merge": false,
+  "ticket_id_prefix": "PA"
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `max_concurrent_agents` | `6` | Max agents dispatched in parallel per wave |
+| `default_model` | `"sonnet"` | Model for agents unless overridden per-agent |
+| `agents.{name}.enabled` | `true` | Set `false` to skip this agent type entirely |
+| `agents.{name}.model` | `null` | Override model for a specific agent (`null` = use `default_model`) |
+| `auto_review` | `true` | Automatically run reviews after agents complete |
+| `auto_merge` | `false` | Automatically merge after all tickets are done (if `true`, skips the merge approval prompt) |
+| `ticket_id_prefix` | `"PA"` | Prefix for ticket IDs (e.g., `PA-001`). Change to `MW` for marketing-website tickets |
+
+When reading config, load global first, then merge workspace config on top (workspace values override global). If no config file exists at either level, use the defaults above.
+
 ## How It Works
 
 ### Core Workflow

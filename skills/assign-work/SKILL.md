@@ -33,6 +33,16 @@ Default agent definitions use `@plugin/agents/` prefix in `definition_file` — 
 
 ## Workflow
 
+### Step 0: Load Configuration
+
+Read config from two levels and merge (workspace overrides global):
+1. Global: `~/.claude/project-agent/config.json`
+2. Workspace: `{cwd}/.project-agent/config.json`
+
+If neither exists, use defaults: `max_concurrent_agents: 6`, `default_model: "sonnet"`, all agents enabled, `auto_review: true`, `auto_merge: false`.
+
+Use these settings throughout the workflow — especially `max_concurrent_agents` for the dispatch limit, agent `enabled` flags when matching tickets to agents, and `auto_review`/`auto_merge` for the orchestration loop.
+
 ### Step 1: Read and Reconcile Board State
 
 Read the board.json for the resolved project. If it has no tickets, tell the user to run `/plan-project` first.
@@ -89,7 +99,7 @@ Then ask: **"Ready to dispatch these tickets?"** using AskUserQuestion. Only pro
 
 **IMPORTANT: Launch agents concurrently, not sequentially.** Prepare all ticket prompts first, update board.json for all tickets, then make **multiple Agent tool calls in a single message** so they run in parallel. This is how Claude Code parallelizes work — multiple tool calls in one response execute simultaneously.
 
-For up to 6 tickets at a time:
+For up to `max_concurrent_agents` tickets at a time (from config, default 6):
 
 1. **Prepare all prompts first.** For each ticket, read:
    - The ticket file at the path specified in `ticket_file`
@@ -172,7 +182,7 @@ The user approves at each checkpoint but does not need to manually invoke each s
 
 ## Important
 
-- **Never dispatch more than 6 agents at once.** Worktrees and context have limits.
+- **Never dispatch more than `max_concurrent_agents` (from config) at once.** Worktrees and context have limits.
 - **Always update board.json before AND after agent dispatch.** This keeps the board consistent even if an agent fails.
 - **Read ticket files fresh every time.** Do not rely on cached content.
 - **If no tickets are ready**, explain why (all done, all blocked, dependencies pending) and suggest next steps.
