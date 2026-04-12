@@ -71,7 +71,7 @@ The main entry point. Provide a project description and Claude will:
 
 ### `/assign-work [project-name]`
 
-Reads the board, finds tickets whose dependencies are satisfied, matches them to the right agent type, and launches up to 3 subagents in parallel. Each agent works in an isolated git worktree to prevent conflicts.
+Reads the board, finds tickets whose dependencies are satisfied, matches them to the right agent type, and launches subagents in parallel (up to `max_concurrent_agents`, default 6). Each agent works in an isolated git worktree to prevent conflicts.
 
 ### `/check-status [project-name]`
 

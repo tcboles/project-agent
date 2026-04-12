@@ -112,7 +112,7 @@ Use `/config` to view or change settings (e.g., `/config show`, `/config set max
 
 ### Core Workflow
 1. **`/plan-project`** — User describes a project (with a name). The skill asks clarifying questions, designs architecture, generates tickets under `.project-agent/projects/{name}/`, and creates any project-specific agents needed.
-2. **`/assign-work [project-name]`** — Reads the board for the specified project (or prompts if multiple exist), finds tickets whose dependencies are satisfied, and dispatches them to subagents in isolated worktrees (up to 3 in parallel).
+2. **`/assign-work [project-name]`** — Reads the board for the specified project (or prompts if multiple exist), finds tickets whose dependencies are satisfied, and dispatches them to subagents in isolated worktrees (up to `max_concurrent_agents` in parallel, default 6).
 3. **`/check-status [project-name]`** — Displays board state. Without args, shows a summary of all projects. With a name, drills into that project.
 
 ### Quality & Integration
