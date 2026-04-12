@@ -57,11 +57,13 @@ run tests, and produce a verdict (APPROVE, REQUEST_CHANGES, or BLOCK).
 
 Ask: **"Ready to run reviews on these tickets?"** using AskUserQuestion. Only proceed if the user approves.
 
-### Step 4: Dispatch Reviewer Agent
+### Step 4: Dispatch Reviewer Agents in Parallel
 
-For each ticket in review (up to 3 in parallel):
+**IMPORTANT: Launch all reviewer agents concurrently.** Prepare all prompts first, update board.json for all tickets, then make **multiple Agent tool calls in a single message** so they run in parallel.
 
-1. **Update board.json:**
+For up to 6 tickets at a time:
+
+1. **Update board.json for ALL tickets BEFORE launching:**
    - Set ticket `assigned_agent` to `reviewer`
    - Set the reviewer agent `status` to `busy`
    - Set the reviewer agent `current_ticket` to the ticket id

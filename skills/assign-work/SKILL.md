@@ -80,25 +80,29 @@ For each ready ticket, match its `category` field to an agent `id`:
 | PA-004 | ...   | developer | P1 | medium |
 | PA-005 | ...   | developer | P1 | medium |
 
-Agents will work in isolated git worktrees. Up to 3 will run in parallel.
+Agents will work in isolated git worktrees. Up to 6 will run in parallel.
 ```
 
 Then ask: **"Ready to dispatch these tickets?"** using AskUserQuestion. Only proceed to Step 6 if the user approves. If they want changes (e.g., skip a ticket, change priority, reassign an agent), make those adjustments first and re-present.
 
-### Step 6: Dispatch Agents (Up to 3 in Parallel)
+### Step 6: Dispatch Agents in Parallel
 
-For each ticket being dispatched:
+**IMPORTANT: Launch agents concurrently, not sequentially.** Prepare all ticket prompts first, update board.json for all tickets, then make **multiple Agent tool calls in a single message** so they run in parallel. This is how Claude Code parallelizes work — multiple tool calls in one response execute simultaneously.
 
-1. **Read the ticket file** at the path specified in `ticket_file`.
-2. **Read the agent definition file** at the path specified in the matched agent's `definition_file`.
-3. **Read all three tiers of learnings** and combine relevant entries.
-4. **Update board.json BEFORE launching:**
+For up to 6 tickets at a time:
+
+1. **Prepare all prompts first.** For each ticket, read:
+   - The ticket file at the path specified in `ticket_file`
+   - The agent definition file at the path specified in the matched agent's `definition_file`
+   - All three tiers of learnings
+   - Handoff notes from dependency tickets
+2. **Update board.json for ALL tickets BEFORE launching any agents:**
    - Set ticket `status` to `in-progress`
    - Set ticket `assigned_agent` to the agent id
    - Set ticket `updated_at` to current ISO timestamp
    - Set agent `status` to `busy`
    - Set agent `current_ticket` to the ticket id
-5. **Launch the subagent** using the Agent tool with these parameters:
+3. **Launch ALL agents in a single message.** Use multiple Agent tool calls in one response — this is critical for parallelism. Each Agent call uses these parameters:
    - `description`: The ticket title
    - `isolation`: `"worktree"` — each agent works in an isolated git worktree
    - `prompt`: Combine the agent definition (as behavioral instructions) with the full ticket content (as the task). Structure the prompt as:
@@ -168,7 +172,7 @@ The user approves at each checkpoint but does not need to manually invoke each s
 
 ## Important
 
-- **Never dispatch more than 3 agents at once.** Worktrees and context have limits.
+- **Never dispatch more than 6 agents at once.** Worktrees and context have limits.
 - **Always update board.json before AND after agent dispatch.** This keeps the board consistent even if an agent fails.
 - **Read ticket files fresh every time.** Do not rely on cached content.
 - **If no tickets are ready**, explain why (all done, all blocked, dependencies pending) and suggest next steps.
