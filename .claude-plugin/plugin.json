@@ -1,0 +1,7 @@
+{
+  "name": "project-agent",
+  "description": "Project management agent system — plan projects, generate tickets, and orchestrate specialized coding agents with worktree isolation",
+  "author": {
+    "name": "Thomas"
+  }
+}

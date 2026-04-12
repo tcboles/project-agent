@@ -1,0 +1,5 @@
+# Runtime data created by hooks
+data/
+
+# Local claude settings
+.claude/settings.local.json

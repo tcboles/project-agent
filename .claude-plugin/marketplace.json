@@ -1,0 +1,15 @@
+{
+  "name": "project-agent",
+  "description": "Project management agent system — plan projects, generate tickets, and orchestrate specialized coding agents",
+  "owner": {
+    "name": "Thomas"
+  },
+  "plugins": [
+    {
+      "name": "project-agent",
+      "description": "Project management with ticket-based orchestration for specialized coding agents",
+      "source": "./",
+      "category": "development"
+    }
+  ]
+}

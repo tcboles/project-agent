@@ -1,0 +1,16 @@
+{
+  "description": "Tracks agent file operations for progress visibility. Logs Edit/Write/Bash activity to data/activity.log.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/track-progress.sh"
+          }
+        ],
+        "matcher": "Edit|Write|Bash"
+      }
+    ]
+  }
+}
