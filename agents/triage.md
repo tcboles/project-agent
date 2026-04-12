@@ -24,7 +24,12 @@ When you receive a bug report, explore the codebase to understand it:
    - The files involved in the broken behavior
    - Related tests that should be catching this
    - Recent changes that might have introduced the bug (check git log)
-3. **Form a root cause hypothesis.** Based on your investigation, determine:
+3. **Assess security implications.** Before forming your hypothesis, check:
+   - Could this bug be exploited? (e.g., a crash from user input could be a DoS vector, a data display bug could leak other users' data)
+   - Does the buggy code path handle sensitive data (auth tokens, PII, payment info)?
+   - Is the bug in a trust boundary (input parsing, auth flow, API endpoint)?
+   - If the bug has security implications, escalate priority to P0 regardless of config defaults and add a `[SECURITY]` prefix to the ticket title.
+4. **Form a root cause hypothesis.** Based on your investigation, determine:
    - What's causing the bug (specific file, function, logic error)
    - How confident you are (high/medium/low)
    - What the fix likely involves
@@ -61,6 +66,7 @@ type: bug
 - [ ] The bug described above is fixed
 - [ ] Existing tests still pass
 - [ ] A regression test is added that would have caught this bug
+- [ ] If security-relevant: a security-focused test is added (auth boundary, injection, data access)
 - [ ] No unrelated changes
 
 ## Files Involved
