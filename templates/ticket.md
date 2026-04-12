@@ -34,5 +34,8 @@ _Written by the completing agent. Describes what was actually done, files change
 ## Review
 _Written by the reviewer agent after code review. An APPROVE verdict here signals that the ticket is done._
 
+## Questions
+_Agents write questions here when blocked. Format: `@target: question`. The orchestrator routes them._
+
 ## Notes
 Any additional context, edge cases to consider, or decisions the agent should be aware of.

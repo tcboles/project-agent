@@ -150,16 +150,45 @@ You are working in the project at {project root path}. Explore the codebase befo
    - Global (~/.claude/project-agent/learnings.json): tool/platform issues that apply everywhere
    - Workspace (.project-agent/learnings.json): codebase-wide conventions and gotchas
    - Project (.project-agent/projects/{name}/learnings.json): project-specific discoveries
-3. Summarize what you did and whether all acceptance criteria are met.
-4. If you encounter a blocker, describe it clearly so it can be addressed.
+3. If you need input from another agent or the user, write to ## Questions in the ticket.
+4. **You MUST end your response with a structured Agent Report** (see your role definition).
+   The orchestrator parses this to determine next steps. Do not skip it.
 ```
 
-7. **After agent completes**, update board.json:
-   - Set ticket `status` to `review` (if the agent reports success) or `blocked` (if the agent reports a blocker)
+7. **Parse the agent's structured output.** Every agent ends with an `## Agent Report` block. Parse the STATUS field:
+
+   **If STATUS is SUCCESS:**
+   - Set ticket `status` to `review`
    - Set ticket `updated_at` to current ISO timestamp
+
+   **If STATUS is PARTIAL:**
+   - Keep ticket `status` as `in-progress` (or set to `backlog` if you want to re-dispatch)
+   - The agent did some work but not all — check handoff notes for what remains
+   - Increment `retry_count` on the ticket
+
+   **If STATUS is BLOCKED:**
+   - Check the BLOCKERS field and the ticket's `## Questions` section
+   - If the question targets another agent (`@architect`, `@developer`, etc.):
+     - Dispatch that agent with the question as context
+     - When the answer comes back, append it to `## Questions` and set ticket to `backlog` for re-dispatch
+   - If the question targets `@user`:
+     - Present the question to the user and wait for their answer
+     - Append the answer to `## Questions` and set ticket to `backlog`
+   - Set ticket `status` to `blocked`
+
+   **If STATUS is FAILED:**
+   - Check `retry_count` on the ticket and apply the escalation protocol:
+     - **retry_count 0-1:** Re-dispatch with same model, include the failure reason in the prompt
+     - **retry_count 2:** Escalate — re-dispatch with `model: "opus"` for more capability
+     - **retry_count 3+:** Stop. Flag to the user: "Ticket {id} has failed {N} times. Last error: {blocker}. Needs manual intervention."
+   - Increment `retry_count`
+   - Set ticket `status` to `backlog` (for retry) or `blocked` (if escalation exhausted)
+
+   **In all cases:**
    - Set agent `status` to `idle`
    - Set agent `current_ticket` to `null`
-   - If the agent reported blockers, add them to the ticket's notes
+   - Set ticket `updated_at` to current ISO timestamp
+   - If SECURITY_ISSUES is not "none", add a `[SECURITY]` note to the ticket
 
 ### Step 7: Report Results
 

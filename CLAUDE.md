@@ -145,6 +145,9 @@ Use `/config` to view or change settings (e.g., `/config show`, `/config set max
 
 Skills update board.json with corrections before proceeding. This makes the system resilient to interruptions.
 
+### Recovery
+8. **`/resume [project-name]`** — Recover from an interrupted session. Performs deep reconciliation (resets stale agents, detects orphaned work, routes unanswered questions), presents a recovery report, and re-enters the orchestration loop.
+
 ## Rules for Agents
 
 - Stay within the scope of the assigned ticket. Do not refactor unrelated code.
@@ -156,6 +159,34 @@ Skills update board.json with corrections before proceeding. This makes the syst
   - Workspace (`.project-agent/learnings.json`): codebase-wide conventions and gotchas
   - Project (`.project-agent/projects/{name}/learnings.json`): project-specific discoveries
 - If blocked, document the blocker in the ticket notes rather than guessing.
+
+## Structured Agent Output
+
+Every agent MUST end their response with a structured `## Agent Report` block. The orchestrator parses this to determine next steps (retry, escalate, review, merge). Free-form text is not reliable for orchestration decisions.
+
+See each agent's definition file for the exact format. The key field is STATUS: `SUCCESS`, `PARTIAL`, `BLOCKED`, `FAILED` (or `APPROVE`/`REQUEST_CHANGES`/`BLOCK` for the reviewer).
+
+## Retry & Escalation Protocol
+
+When an agent fails or a review sends a ticket back:
+
+| Retry Count | Action |
+|-------------|--------|
+| 0-1 | Re-dispatch with same model, include failure/review feedback in prompt |
+| 2 | Re-dispatch with same model, include all prior feedback |
+| 3 | **Escalate** — re-dispatch with `model: "opus"` for more capability |
+| 4+ | **Stop** — flag to user as needing manual intervention |
+
+Retry count is tracked per ticket in board.json (`retry_count` field).
+
+## Agent Collaboration
+
+Agents can ask questions to other agents or the user via the ticket's `## Questions` section:
+
+- `@architect: Is the UserProfile interface supposed to include avatarUrl?`
+- `@user: The ticket says Redis but I only see PostgreSQL — which should I use?`
+
+The orchestrator routes questions: dispatches the target agent with the question, or presents `@user` questions directly. After the answer is appended, the blocked ticket returns to `backlog` for re-dispatch.
 
 ## Typical Session Flow
 

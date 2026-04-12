@@ -104,23 +104,27 @@ End with a clear verdict: APPROVE, REQUEST_CHANGES, or BLOCK.
 
 ### Step 5: Process Review Results
 
-For each completed review:
+Parse the reviewer's `## Agent Report` block. The STATUS field contains the verdict: APPROVE, REQUEST_CHANGES, or BLOCK.
 
-**If verdict is APPROVE:**
+**If STATUS is APPROVE:**
 - Set ticket `status` to `done`
 - Set ticket `completed_at` to current ISO timestamp
 - Set ticket `updated_at` to current ISO timestamp
 - Append the review summary to the ticket's `## Review` section
+- Reset `retry_count` to 0
 
-**If verdict is REQUEST_CHANGES:**
-- Set ticket `status` to `backlog` (so it gets picked up again by `/assign-work`)
+**If STATUS is REQUEST_CHANGES:**
+- Increment `retry_count` on the ticket
+- Apply escalation protocol:
+  - **retry_count 1-2:** Set ticket `status` to `backlog`, append review findings to `## Review Feedback`. The developer will be re-dispatched with this feedback.
+  - **retry_count 3:** Set ticket `status` to `backlog`, but the next dispatch will use `model: "opus"` (escalated capability).
+  - **retry_count 4+:** Set ticket `status` to `blocked`. Flag to user: "Ticket {id} has been reviewed {N} times without passing. Last findings: {summary}. Needs manual intervention."
 - Set ticket `assigned_agent` to `null`
-- Append the review findings to a new `## Review Feedback` section in the ticket file
-- The review feedback becomes part of the context for the next agent that picks it up
 
-**If verdict is BLOCK:**
+**If STATUS is BLOCK:**
 - Set ticket `status` to `blocked`
 - Append the review findings to the ticket
+- If SECURITY_ISSUES is not "none", add `[SECURITY]` prefix to the blocker note
 - Flag this to the user — blocked tickets need manual intervention
 
 In all cases:
