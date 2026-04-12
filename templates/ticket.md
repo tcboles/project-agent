@@ -29,10 +29,10 @@ Architecture decisions, patterns to follow, relevant design choices, and any con
 None | List of PA-NNN ticket IDs that must complete before this ticket can start.
 
 ## Handoff Notes
-_Written by the completing agent. Describes what was actually done, files changed, decisions made, and anything downstream agents need to know._
+_Written by the completing agent. Describes what was actually done, files changed, decisions made, and anything downstream agents need to know. The presence of content here signals that an agent has completed work on this ticket._
 
 ## Review
-_Written by the reviewer agent after code review._
+_Written by the reviewer agent after code review. An APPROVE verdict here signals that the ticket is done._
 
 ## Notes
 Any additional context, edge cases to consider, or decisions the agent should be aware of.

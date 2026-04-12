@@ -90,6 +90,17 @@ Default agent definitions (architect, developer, tester, reviewer) live in the p
 - Agents work in isolated git worktrees — changes are merged back via `/merge-work`.
 - All skills accept an optional `[project-name]` argument. If omitted and multiple projects exist, the skill prompts the user to choose.
 
+## Source of Truth
+
+**Ticket files are the source of truth, not board.json.** Board.json is a cache that can get stale (session ends mid-work, agent fails to write back, user works manually). Every skill that reads the board MUST reconcile first:
+
+- If a ticket has `## Handoff Notes` content but board says `backlog` → it's actually `review`
+- If all acceptance criteria are checked (`- [x]`) but board says `backlog` → it's actually `review`
+- If `## Review` contains an `APPROVE` verdict but board says `review` → it's actually `done`
+- If an agent shows `busy` but its ticket is `done` → the agent is actually `idle`
+
+Skills update board.json with corrections before proceeding. This makes the system resilient to interruptions.
+
 ## Rules for Agents
 
 - Stay within the scope of the assigned ticket. Do not refactor unrelated code.

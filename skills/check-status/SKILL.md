@@ -42,10 +42,34 @@ Run `/check-status {name}` to see details for a specific project.
 
 ## Single Project View
 
-When showing a specific project, read its board.json and render:
+When showing a specific project:
 
-1. **Compute statistics.**
-   - Count tickets by status: done, in-progress, review, assigned, backlog, blocked.
+### Reconcile Board State (CRITICAL — do this FIRST)
+
+**Board.json is a cache, not the source of truth. Ticket files are the source of truth.** Before displaying anything, reconcile by reading every ticket file and comparing against board.json:
+
+1. **Read each ticket file** referenced in board.json. Check the ticket's YAML frontmatter (`status`, `assigned_agent`) and content.
+2. **Detect completed work on "backlog" tickets.** A ticket's board status is wrong if:
+   - Board says `backlog` or `in-progress` BUT the ticket file has a non-empty `## Handoff Notes` section (agent finished work) → should be `review`
+   - Board says `backlog` or `in-progress` BUT all acceptance criteria checkboxes are checked (`- [x]`) → should be `review`
+   - Board says `review` BUT the ticket file has a `## Review` section with an `APPROVE` verdict → should be `done`
+   - Board says `in-progress` BUT the agent listed in `assigned_agent` shows `idle` in the agents array → stale, reset to `backlog` or `review` based on whether handoff notes exist
+3. **Detect stale agent states.** If an agent shows `busy` with a `current_ticket` but that ticket is `done` or `backlog`, reset the agent to `idle`.
+4. **Update board.json** with any corrections found. Log what was reconciled so the user sees it:
+
+```
+## Board Reconciliation
+The following tickets were out of sync and have been updated:
+- PA-001: backlog → review (handoff notes found, work was completed)
+- PA-003: in-progress → review (all acceptance criteria met)
+- Agent "developer": busy → idle (assigned ticket already complete)
+```
+
+Only show the reconciliation section if changes were made.
+
+### Compute Statistics
+
+1. **Count tickets by status** (using the reconciled data): done, in-progress, review, assigned, backlog, blocked.
    - Identify blocked tickets: tickets in `backlog` whose dependencies include tickets that are NOT `done`.
    - Calculate completion percentage: `done / total * 100`.
    - Identify agent utilization: which agents are busy vs idle.

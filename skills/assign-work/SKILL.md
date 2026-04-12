@@ -33,9 +33,18 @@ Default agent definitions use `@plugin/agents/` prefix in `definition_file` — 
 
 ## Workflow
 
-### Step 1: Read Board State
+### Step 1: Read and Reconcile Board State
 
 Read the board.json for the resolved project. If it has no tickets, tell the user to run `/plan-project` first.
+
+**Before proceeding, reconcile board.json against the actual ticket files.** Board.json is a cache — ticket files are the source of truth. For each ticket in board.json:
+
+1. Read the ticket file at `ticket_file`.
+2. If the board says `backlog` or `in-progress` but the ticket has non-empty `## Handoff Notes` → update to `review`.
+3. If the board says `backlog` or `in-progress` but all acceptance criteria are checked (`- [x]`) → update to `review`.
+4. If the board says `review` but the ticket has a `## Review` section with `APPROVE` → update to `done`.
+5. If an agent shows `busy` but its `current_ticket` is `done` or `backlog` → reset to `idle`.
+6. Write any corrections to board.json and briefly note what was reconciled.
 
 ### Step 2: Find Ready Tickets
 
