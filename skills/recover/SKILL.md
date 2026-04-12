@@ -1,13 +1,14 @@
 ---
-name: resume
+name: recover
 description: >-
-  Resume an interrupted orchestration session. Reads the board state, recovers
+  Recover an interrupted orchestration session. Reads the board state, recovers
   from stale agents and incomplete work, and picks up the orchestration loop
-  from wherever it stopped. Use when the user asks to "resume", "continue",
-  "pick up where we left off", or "restart work".
+  from wherever it stopped. Use when the user asks to "recover project",
+  "pick up where we left off", "restart work", or "recover board".
+  Note: /resume is a built-in Claude Code command — this skill uses /recover instead.
 ---
 
-# Resume
+# Recover
 
 Recover from an interrupted session and continue the orchestration loop.
 

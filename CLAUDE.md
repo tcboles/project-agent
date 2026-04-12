@@ -146,7 +146,7 @@ Use `/config` to view or change settings (e.g., `/config show`, `/config set max
 Skills update board.json with corrections before proceeding. This makes the system resilient to interruptions.
 
 ### Recovery
-8. **`/resume [project-name]`** — Recover from an interrupted session. Performs deep reconciliation (resets stale agents, detects orphaned work, routes unanswered questions), presents a recovery report, and re-enters the orchestration loop.
+8. **`/recover [project-name]`** — Recover from an interrupted session. Performs deep reconciliation (resets stale agents, detects orphaned work, routes unanswered questions), presents a recovery report, and re-enters the orchestration loop.
 
 ## Rules for Agents
 
