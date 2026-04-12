@@ -198,6 +198,22 @@ PA-004 (developer, no deps) → PA-006 (tester)
 
 Ask the user to review and approve. If they want changes, iterate on the tickets before finalizing.
 
+## Phase 7: Orchestrate the Board
+
+Once the user approves the plan, **you own the board**. Drive it to completion by running the orchestration loop:
+
+1. **Dispatch ready tickets** — follow the `/assign-work` workflow: reconcile the board, find tickets with satisfied dependencies, present what you're about to dispatch, get user approval, then launch agents.
+2. **Wait for agents to complete** — update board.json as each agent finishes.
+3. **Review completed work** — follow the `/review-board` workflow: run the reviewer agent against tickets in `review` status. Approved tickets move to `done`; rejected tickets go back to `backlog` with feedback.
+4. **Loop** — after reviews, check if new tickets are now ready (their dependencies just moved to `done`). If so, go back to step 1. Continue until:
+   - All tickets are `done` → proceed to step 5
+   - All remaining tickets are `blocked` → stop and explain the blockers to the user
+5. **Merge** — once all tickets are done, follow the `/merge-work` workflow: present the merge plan, get approval, merge worktrees in dependency order.
+
+**At each checkpoint (dispatching agents, merging), present the plan and get user approval before proceeding.** The user should see what's about to happen but shouldn't need to manually invoke each skill.
+
+If the user interrupts or the session ends, the board state is preserved. The user can resume by running `/assign-work` or `/check-status` to pick up where things left off.
+
 ## Important
 
 - **Do not rush the question phase.** A poorly scoped project plan wastes more time than asking one more question.

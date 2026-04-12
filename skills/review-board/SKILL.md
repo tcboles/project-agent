@@ -139,6 +139,17 @@ Show a summary:
 - {K} tickets blocked (need manual review)
 ```
 
+### Step 7: Continue the Orchestration Loop
+
+**Do not stop here.** After reporting review results, automatically continue:
+
+1. **Reconcile the board** — tickets that were approved are now `done`, which may unblock dependent tickets.
+2. **If there are ready tickets** (status `backlog` with all dependencies `done`, including reworked tickets sent back by review) — proceed to the `/assign-work` workflow: present what you'll dispatch, get approval, launch agents.
+3. **If all tickets are `done`** — present the `/merge-work` plan: show branches to merge, get approval, merge in dependency order.
+4. **If all remaining tickets are `blocked`** — stop and explain the blockers to the user.
+
+The user approves at each checkpoint but does not need to manually invoke each skill.
+
 ## Important
 
 - **Reviews are mandatory.** No ticket should go from `in-progress` directly to `done` without passing through review.

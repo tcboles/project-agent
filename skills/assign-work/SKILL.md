@@ -153,7 +153,18 @@ After all dispatched agents complete, show:
 - Which tickets were dispatched and to which agents
 - Results from each agent (success, partial, or blocked)
 - What tickets are now ready for the next wave
-- Suggest running `/check-status {name}` for the full board view
+
+### Step 8: Continue the Orchestration Loop
+
+**Do not stop here.** After reporting results, automatically continue:
+
+1. **If there are tickets in `review` status** — proceed to the `/review-board` workflow: present the review plan, get approval, dispatch reviewer agents, process results.
+2. **After reviews complete, reconcile the board** and check for newly ready tickets (dependencies satisfied by tickets that just moved to `done`).
+3. **If there are ready tickets** — loop back to Step 1 of this skill (read board, find ready tickets, present plan, get approval, dispatch).
+4. **If all tickets are `done`** — present the `/merge-work` plan: show branches to merge, get approval, merge in dependency order.
+5. **If all remaining tickets are `blocked`** — stop and explain the blockers to the user.
+
+The user approves at each checkpoint but does not need to manually invoke each skill.
 
 ## Important
 
