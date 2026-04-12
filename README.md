@@ -31,24 +31,28 @@ claude --plugin-dir /path/to/project-agent
 
 ## Quick Start
 
-You provide the commands — Claude does the work. Each step is a single slash command.
-
 ```
 /plan-project mobile-app
 ```
 
 Claude asks clarifying questions about your project, designs the architecture, and generates a full board of dependency-ordered tickets. You review and approve the plan.
 
-From there, you drive the board through its lifecycle:
+Once approved, Claude takes over. It orchestrates the full lifecycle autonomously — dispatching agents, reviewing completed work, dispatching the next wave, and merging results. You approve key checkpoints (before dispatching agents, before merging) but Claude drives the board to completion.
+
+You can check in at any time:
 
 ```
-/assign-work mobile-app      # dispatches ready tickets to agents in worktrees
 /check-status mobile-app     # see what's done, in progress, or blocked
+```
+
+Individual skills are also available if you want manual control over a specific step:
+
+```
+/assign-work mobile-app      # dispatch ready tickets to agents
 /review-board mobile-app     # run code reviews on completed tickets
 /merge-work mobile-app       # merge finished worktrees into main
+/update-ticket PA-003 ...    # modify a ticket mid-flight
 ```
-
-Run `/assign-work` again after each wave completes to dispatch the next batch of tickets whose dependencies are now satisfied. Repeat until the board is clear.
 
 ## Skills
 
