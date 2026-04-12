@@ -99,6 +99,10 @@ Settings are loaded from two levels (workspace overrides global):
 | `auto_review` | `true` | Automatically run reviews after agents complete |
 | `auto_merge` | `false` | Automatically merge after all tickets are done (if `true`, skips the merge approval prompt) |
 | `ticket_id_prefix` | `"PA"` | Prefix for ticket IDs (e.g., `PA-001`). Change to `MW` for marketing-website tickets |
+| `triage.auto_fix` | `true` | Triage agent dispatches fix agents automatically |
+| `triage.auto_verify` | `true` | Triage agent runs tests after fix |
+| `triage.default_priority` | `"P1"` | Default priority for triaged bugs |
+| `triage.max_concurrent_triage` | `4` | Max background triage agents simultaneously |
 
 When reading config, load global first, then merge workspace config on top (workspace values override global). If no config file exists at either level, use the defaults above.
 
@@ -115,8 +119,11 @@ Use `/config` to view or change settings (e.g., `/config show`, `/config set max
 4. **`/review-board [project-name]`** — Quality gate for a specific project's completed tickets.
 5. **`/merge-work [project-name]`** — Merges completed worktrees for a specific project.
 
+### Bug Triage
+6. **`/triage [bug description]`** — Fire-and-forget bug triage. Launches a background triage agent that investigates the bug, creates a ticket, dispatches a fix agent in a worktree, verifies the fix, and reports back. User can rapid-fire multiple `/triage` commands without waiting.
+
 ### Ticket Management
-6. **`/update-ticket`** — Modify tickets after planning: add context, reprioritize, split, block, reassign, or edit.
+7. **`/update-ticket`** — Modify tickets after planning: add context, reprioritize, split, block, reassign, or edit.
 
 ## Conventions
 

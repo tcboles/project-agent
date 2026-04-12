@@ -9,5 +9,11 @@
   },
   "auto_review": true,
   "auto_merge": false,
-  "ticket_id_prefix": "PA"
+  "ticket_id_prefix": "PA",
+  "triage": {
+    "auto_fix": true,
+    "auto_verify": true,
+    "default_priority": "P1",
+    "max_concurrent_triage": 4
+  }
 }

@@ -52,7 +52,10 @@ Individual skills are also available if you want manual control over a specific 
 /review-board mobile-app     # run code reviews on completed tickets
 /merge-work mobile-app       # merge finished worktrees into main
 /update-ticket PA-003 ...    # modify a ticket mid-flight
+/triage login button broken  # fire-and-forget bug triage
 ```
+
+Found a bug while reviewing output? Just fire `/triage` with a description — a background agent investigates, creates a ticket, dispatches a fix, and verifies it. You can rapid-fire multiple `/triage` commands without waiting.
 
 ## Skills
 
@@ -93,9 +96,25 @@ Modify tickets after planning without re-planning the entire project:
 - **Reassign**: `/update-ticket PA-003 category frontend-dev`
 - **Edit**: `/update-ticket PA-003 edit`
 
+### `/triage [bug description]`
+
+Fire-and-forget bug triage. Accepts any bug description — from a detailed report to a quick "login broken" — and handles it entirely in the background:
+
+1. Launches a triage agent that investigates the codebase to understand the bug
+2. Creates a ticket with root cause hypothesis, relevant files, and acceptance criteria
+3. Dispatches a fix agent in an isolated worktree
+4. Verifies the fix (runs tests, checks acceptance criteria)
+5. Reports back with the result
+
+You can rapid-fire multiple `/triage` commands. Each runs independently in the background. The `triage.max_concurrent_triage` config controls how many run simultaneously (default 4) — excess bugs are ticketed for later.
+
+### `/config [show|set|reset]`
+
+View or modify project-agent settings. See [Configuration](#configuration) for details.
+
 ## Agents
 
-Four default agents ship with the plugin. `/plan-project` can create additional project-specific agents when needed.
+Five default agents ship with the plugin. `/plan-project` can create additional project-specific agents when needed.
 
 | Agent | Role | Writes Code? |
 |-------|------|:------------:|
@@ -103,6 +122,7 @@ Four default agents ship with the plugin. `/plan-project` can create additional 
 | **developer** | Feature implementation, bug fixes, refactoring | Yes |
 | **tester** | Unit/integration/e2e tests, coverage, edge cases | Yes (tests only) |
 | **reviewer** | Code review with severity-rated findings | No (review docs only) |
+| **triage** | Bug investigation, ticket creation, fix routing, verification | No (coordinates only) |
 
 Each agent is defined as a markdown file with YAML frontmatter specifying its name, tools, model, and behavioral instructions. You can customize the defaults or create new agents for specific domains (e.g., `mobile-dev`, `ml-engineer`).
 
@@ -163,7 +183,13 @@ Settings are loaded from two levels (workspace overrides global):
   },
   "auto_review": true,
   "auto_merge": false,
-  "ticket_id_prefix": "PA"
+  "ticket_id_prefix": "PA",
+  "triage": {
+    "auto_fix": true,
+    "auto_verify": true,
+    "default_priority": "P1",
+    "max_concurrent_triage": 4
+  }
 }
 ```
 
@@ -176,6 +202,10 @@ Settings are loaded from two levels (workspace overrides global):
 | `auto_review` | `true` | Automatically run reviews after agents complete |
 | `auto_merge` | `false` | Automatically merge after all tickets are done (skips merge approval) |
 | `ticket_id_prefix` | `"PA"` | Prefix for ticket IDs (e.g., change to `MW` for marketing-website) |
+| `triage.auto_fix` | `true` | Triage agent dispatches fix agents automatically |
+| `triage.auto_verify` | `true` | Triage agent runs tests to verify fixes |
+| `triage.default_priority` | `"P1"` | Default priority for triaged bugs |
+| `triage.max_concurrent_triage` | `4` | Max background triage agents simultaneously |
 
 To reduce parallelism (e.g., on a slower machine), set `max_concurrent_agents` to `2` or `3`. To skip code reviews entirely, set `agents.reviewer.enabled` to `false`.
 
@@ -225,14 +255,17 @@ project-agent/                    # plugin root
 │   ├── architect.md              # default agents
 │   ├── developer.md
 │   ├── reviewer.md
-│   └── tester.md
+│   ├── tester.md
+│   └── triage.md
 ├── skills/
 │   ├── plan-project/SKILL.md     # 6 skills
 │   ├── assign-work/SKILL.md
 │   ├── check-status/SKILL.md
 │   ├── review-board/SKILL.md
 │   ├── merge-work/SKILL.md
-│   └── update-ticket/SKILL.md
+│   ├── update-ticket/SKILL.md
+│   ├── triage/SKILL.md
+│   └── config/SKILL.md
 ├── hooks/
 │   ├── hooks.json                # progress tracking hook config
 │   └── track-progress.sh         # logs agent file operations
