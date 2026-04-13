@@ -18,6 +18,7 @@ sectioned punch list of issues.
 ```
 STUB_STALE_DAYS        = 7    # pages with status:stub older than this are flagged
 CONTRADICTION_DAYS     = 14   # [!warning] Contradicts callouts older than this need review
+PROPOSED_STALE_DAYS    = 30   # template pages with status:proposed older than this are flagged
 ```
 
 ## When to Use
@@ -220,12 +221,98 @@ For each page in `wiki_pages`:
 3. For fields that are present, validate:
    - `type` must be `wiki`
    - `scope` must be `global` or `project`
-   - `status` must be one of `stub`, `draft`, `reviewed`, `hub`
-   - `category` must be one of: `concept`, `pattern`, `tool`, `decision`, `gotcha`, `architecture`, `domain`
+   - `status` must be one of `stub`, `draft`, `proposed`, `approved`, `reviewed`, `hub`
+   - `category` must be one of: `concept`, `pattern`, `tool`, `decision`, `gotcha`, `architecture`, `domain`, `template`
    - `project`: if `scope=global` must be `null`; if `scope=project` must be a non-null string
 4. Flag any missing fields or invalid values.
 
-**Format:** `{page} — missing fields: {field1}, {field2}` or `{page} — invalid status: "{value}" (must be stub|draft|reviewed|hub)`
+**Format:** `{page} — missing fields: {field1}, {field2}` or `{page} — invalid status: "{value}" (must be stub|draft|proposed|approved|reviewed|hub)`
+
+---
+
+#### Check G — Template & Asset Checks
+
+This section groups five sub-checks specific to `template` pages and the `assets/` directory.
+Run all sub-checks regardless of whether earlier ones find issues. Skip any sub-check gracefully
+if the relevant directory (`wiki/templates/`, `assets/`, etc.) does not exist on disk.
+
+---
+
+##### G1 — Template Page Required Sections
+
+For each page in `wiki_pages` where `category: template`:
+
+1. Read the page body (everything after the closing `---` of the frontmatter).
+2. Check for the presence of all five required section headings:
+   - `## Purpose`
+   - `## Template`
+   - `## Usage Notes`
+   - `## Examples`
+   - `## Related Pages`
+3. For each missing section heading, flag as WARNING (not error).
+
+**Format:** `{page} — template page missing required sections: {section1}, {section2}`
+**Hint:** `Add the missing sections per vault-schema.md Section 9`
+
+---
+
+##### G2 — Asset Existence Check
+
+For each page in `wiki_pages` with a non-empty `assets:` frontmatter array:
+
+1. Determine the page's scope (`global` or `project`) and project name (if scope=project).
+2. For each filename in the `assets:` array:
+   - If `scope=global`: resolve to `{vault}/assets/global/{filename}`
+   - If `scope=project`: resolve to `{vault}/assets/projects/{project}/{filename}`
+3. Check if the resolved file exists on disk.
+4. If not found: flag as ERROR (not warning) — this is a broken asset reference.
+
+**Format:** `{page} — missing asset: "{filename}" expected at {resolved_path}`
+**Hint:** `Copy the asset file to the expected location or remove it from the assets: frontmatter`
+
+---
+
+##### G3 — Orphan Asset Detection
+
+Walk the asset directories and find files with no referencing wiki page:
+
+1. Collect all files under `{vault}/assets/global/` (if directory exists).
+2. Collect all files under `{vault}/assets/projects/*/` (if directory exists).
+3. Exclude `.gitkeep` files from all directories — they are intentional placeholders.
+4. Build a set `all_referenced_assets`:
+   - For each page in `wiki_pages` with a non-empty `assets:` array, and for each filename in that array, add the resolved absolute path to the set (using the same resolution logic as G2).
+5. For each collected asset file: if its absolute path is NOT in `all_referenced_assets`, flag as WARNING.
+
+**Format:** `{asset_path} — orphaned asset, not referenced by any wiki page`
+**Hint:** `Either add this asset to a wiki page's assets: frontmatter, or delete the file`
+
+---
+
+##### G4 — Stale Proposed Template Check
+
+For each page in `wiki_pages` where `category: template` AND `status: proposed`:
+
+1. Read the `updated:` frontmatter field (YYYY-MM-DD format).
+2. Compute days since `updated:` date using today's date.
+3. If `days_since_updated >= PROPOSED_STALE_DAYS` (default 30): flag as WARNING.
+4. If no `updated:` date is present but `created:` is present, use `created:` instead.
+5. If neither date is present: flag unconditionally.
+
+**Format:** `{page} — proposed template not reviewed for {N} days (>{PROPOSED_STALE_DAYS} day threshold)`
+**Hint:** `Review and either approve (set status: approved) or update the content`
+
+---
+
+##### G5 — `code_language` Style Check
+
+For each page in `wiki_pages` where `code_language:` is present and non-empty:
+
+1. Check if the value contains any uppercase characters (`[A-Z]`).
+2. Check if the value contains any whitespace characters.
+3. If either condition is true: flag as WARNING.
+
+**Format:** `{page} — code_language "{value}" contains uppercase or whitespace (spec requires lowercase, no spaces)`
+**Hint:** `Use lowercase with no spaces, e.g. "typescript" not "TypeScript" or "type script"`
 
 ---
 
@@ -280,10 +367,40 @@ Date: {ISO date}
   (Hint: add the missing fields; see vault-schema.md Section 5 for required fields)
 ...
 
+### G. Template & Asset Checks (N)
+> Template page structure, asset existence, orphaned files, stale proposals, and code_language style.
+> Errors (E) are broken asset references. Warnings (W) are structural or style issues.
+
+#### G1. Template Required Sections (N warnings)
+- wiki/templates/my-template.md — template page missing required sections: ## Examples, ## Related Pages
+  (Hint: Add the missing sections per vault-schema.md Section 9)
+...
+
+#### G2. Missing Assets (N errors)
+- wiki/templates/my-template.md — missing asset: "diagram.png" expected at {vault}/assets/global/diagram.png
+  (Hint: Copy the asset file to the expected location or remove it from the assets: frontmatter)
+...
+
+#### G3. Orphan Assets (N warnings)
+- {vault}/assets/global/old-diagram.png — orphaned asset, not referenced by any wiki page
+  (Hint: Either add this asset to a wiki page's assets: frontmatter, or delete the file)
+...
+
+#### G4. Stale Proposed Templates (N warnings)
+- wiki/templates/my-template.md — proposed template not reviewed for 45 days (>30 day threshold)
+  (Hint: Review and either approve (set status: approved) or update the content)
+...
+
+#### G5. code_language Style (N warnings)
+- wiki/templates/my-template.md — code_language "TypeScript" contains uppercase or whitespace (spec requires lowercase, no spaces)
+  (Hint: Use lowercase with no spaces, e.g. "typescript" not "TypeScript" or "type script")
+...
+
 ---
 
-Summary: {A+B+C+D+E+F} total issues
+Summary: {A+B+C+D+E+F+G} total issues
   {A} orphans | {B} dead links | {C} unresolved contradictions | {D} stale stubs | {E} outdated pages | {F} missing frontmatter
+  {G1} template sections | {G2} missing assets (errors) | {G3} orphan assets | {G4} stale proposals | {G5} code_language style
 ```
 
 If zero total issues:
@@ -295,6 +412,7 @@ Date: {ISO date}
 
 All checks passed. No issues found.
   0 orphans | 0 dead links | 0 unresolved contradictions | 0 stale stubs | 0 outdated pages | 0 missing frontmatter
+  0 template sections | 0 missing assets | 0 orphan assets | 0 stale proposals | 0 code_language style
 ```
 
 ### Step 7: Log to log.md
@@ -308,7 +426,7 @@ vault-schema.md Section 11:
 - **Operation:** lint
 - **Trigger:** manual
 - **Input:** scope={scope}{, project={name} if filtered}
-- **Issues found:** {A} orphans, {B} dead links, {C} contradictions, {D} stale stubs, {E} outdated pages, {F} missing frontmatter
+- **Issues found:** {A} orphans, {B} dead links, {C} contradictions, {D} stale stubs, {E} outdated pages, {F} missing frontmatter, {G1} template sections, {G2} missing assets, {G3} orphan assets, {G4} stale proposals, {G5} code_language style
 - **Issues fixed:** 0 (lint is read-only)
 - **Issues requiring human review:** {list of contradiction callout pages with wikilinks, or "none"}
 ```
@@ -325,3 +443,11 @@ This is the ONLY write operation this skill performs.
 - When checking page ages, use today's date (ISO format) for delta calculations.
 - If `log.md` does not exist, create it with just the lint entry block (no header needed).
 - Be fault-tolerant: if a single page fails to parse, log a warning for that page and continue.
+- **Exit behavior:** If any ERROR-level issues are found (Check G2 missing assets, or any other
+  check that designates findings as errors), the lint run exits with a non-zero status. WARNING-level
+  issues alone (Checks A, C, D, G1, G3, G4, G5, and most of B, E, F) result in a zero exit.
+  Check B (dead wikilinks) and Check F (missing/invalid frontmatter) produce errors, not warnings,
+  matching their existing behavior.
+- **Missing directories:** If `{vault}/wiki/templates/`, `{vault}/assets/global/`, or
+  `{vault}/assets/projects/` do not exist, skip the relevant G sub-checks silently. Do not
+  flag their absence as an issue.

@@ -98,7 +98,11 @@ Pages found here that are NOT already in Tier 1 or Tier 2 are **Tier 3**.
 Within each tier, order by number of distinct query terms matched (more terms = higher within the tier).
 
 ### Skip Source Pages
-Filter out any file whose path contains `/sources/` OR `/templates/` — those are raw entries and templates, not wiki pages.
+Filter out any file whose vault-relative path:
+- Contains `/sources/` — these are raw learning entries, not wiki pages.
+- Starts with `templates/` (vault-relative prefix `^templates/`) — these are the ingest scaffold files in the top-level `{vault}/templates/` directory (e.g., `templates/concept.md`, `templates/pattern.md`).
+
+**Important:** Matches the top-level `templates/` directory only (vault-relative prefix), not any `templates/` subdirectory elsewhere in the vault. Paths such as `wiki/templates/slug.md` and `projects/{name}/templates/slug.md` do NOT match this prefix and must NOT be filtered — those are user-curated template wiki pages that should appear in query results.
 
 ### Collect Candidates
 After running all three tiers across all search paths, you have a ranked list of candidate files. Deduplicate (a file found in global AND project searches counts once; keep the higher tier ranking).
@@ -269,6 +273,6 @@ Results: 2
 
 - **Do not hallucinate results.** If Grep returns nothing, output `Results: 0`. Never invent page paths, titles, or excerpts.
 - **Source pages are not wiki pages.** Never include files from `{vault}/sources/` in results.
-- **Template files are not results.** Never include files from `{vault}/templates/` in results.
+- **Ingest scaffold templates are not results.** Never include files from the top-level `{vault}/templates/` directory (vault-relative path starts with `templates/`). User-curated template wiki pages at `{vault}/wiki/templates/` and `{vault}/projects/{name}/templates/` ARE valid results and must NOT be excluded.
 - **Respect `--limit`.** Never return more results than requested.
 - **Exact field names matter.** PA-006 parses `- Path:`, `- Title:`, etc. by exact string match. Do not alter the field names.

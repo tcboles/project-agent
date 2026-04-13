@@ -105,6 +105,7 @@ Settings are loaded from two levels (workspace overrides global):
 | `triage.auto_verify` | `true` | Triage agent runs tests after fix |
 | `triage.default_priority` | `"P1"` | Default priority for triaged bugs |
 | `triage.max_concurrent_triage` | `4` | Max background triage agents simultaneously |
+| `wiki.patterns.enabled` | `true` | Master switch for the patterns library (/pa-patterns-capture, /pa-patterns-scan). When false, those skills no-op with a message. |
 
 When reading config, load global first, then merge workspace config on top (workspace values override global). If no config file exists at either level, use the defaults above.
 

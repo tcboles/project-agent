@@ -59,6 +59,7 @@ should show `0`.
 | tools | `wiki/tools/` |
 | decisions | `wiki/decisions/` |
 | gotchas | `wiki/gotchas/` |
+| templates | `wiki/templates/` |
 
 **Per-project (under `{vault}/projects/`):**
 For each subdirectory of `{vault}/projects/`:
@@ -68,11 +69,47 @@ For each subdirectory of `{vault}/projects/`:
 | domain | `projects/{name}/domain/` |
 | decisions | `projects/{name}/decisions/` |
 | gotchas | `projects/{name}/gotchas/` |
+| templates | `projects/{name}/templates/` |
 
 Also count `{vault}/sources/global/` and `{vault}/sources/projects/{name}/`
 to show source page counts.
 
 Also count stubs: grep for `^status: stub` across `wiki/` and `projects/`.
+
+**Template status breakdown:**
+For each template directory (global `wiki/templates/` and each
+`projects/{name}/templates/`), count pages by status:
+- `proposed` — grep `^status: proposed` in the directory's `.md` files
+- `approved` — grep `^status: approved`
+- `reviewed` — grep `^status: reviewed`
+- `draft` — grep `^status: draft`
+- `stub` — grep `^status: stub`
+
+If a template directory does not exist, all counts are 0.
+Store the global template total and per-project template totals for the
+dashboard.
+
+### Step 2b: Compute Asset Directory Size
+
+Walk `{vault}/assets/` (both `assets/global/` and `assets/projects/`) and sum
+the sizes of all files (any type, any depth):
+
+1. If `{vault}/assets/` does not exist: total = 0 bytes.
+2. If `{vault}/assets/` exists but contains no files: total = 0 bytes.
+3. Otherwise: sum byte sizes of every file found recursively under
+   `{vault}/assets/`.
+
+Convert the total to human-readable form using the largest applicable unit:
+- < 1 024 bytes → `{N} B`
+- < 1 048 576 bytes (1 MB) → `{N.N} KB`
+- < 1 073 741 824 bytes (1 GB) → `{N.N} MB`
+- ≥ 1 073 741 824 bytes → `{N.N} GB`
+
+If total = 0, display `0 B`.
+
+Also record, for informational display:
+- Number of files under `assets/global/` (0 if directory absent)
+- Number of files under `assets/projects/` (0 if directory absent)
 
 ### Step 3: Recent Activity
 
@@ -134,6 +171,7 @@ Date: {ISO date}
 | tools | {N} |
 | decisions | {N} |
 | gotchas | {N} |
+| templates | {N} |
 
 **Sources**
 | Scope | Count |
@@ -143,9 +181,9 @@ Date: {ISO date}
 ...
 
 **Per-Project**
-| Project | architecture | domain | decisions | gotchas | total |
-|---|---|---|---|---|---|
-| {name} | {N} | {N} | {N} | {N} | {N} |
+| Project | architecture | domain | decisions | gotchas | templates | total |
+|---|---|---|---|---|---|---|
+| {name} | {N} | {N} | {N} | {N} | {N} | {N} |
 ...
 ```
 
@@ -159,11 +197,30 @@ If `--project {name}` was passed, add an expanded section after Per-Project:
 | domain | {N} | {N} |
 | decisions | {N} | {N} |
 | gotchas | {N} | {N} |
+| templates | {N} | {N} |
 ```
 
 Then continue with the rest of the dashboard:
 
 ```
+### Templates ({total_templates} total)
+| Scope | proposed | approved | reviewed | draft | stub | total |
+|---|---|---|---|---|---|---|
+| global | {N} | {N} | {N} | {N} | {N} | {N} |
+| {project-name} | {N} | {N} | {N} | {N} | {N} | {N} |
+...
+
+{If total_templates == 0}: No template pages yet.
+
+### Assets
+Total size: {human-readable size}
+| Scope | Files |
+|---|---|
+| global | {N} |
+| projects | {N} |
+
+{If assets directory absent or empty}: No assets stored yet.
+
 ### Pending Promotions ({total} uningested entries)
 | Tier | File | Pending |
 |---|---|---|

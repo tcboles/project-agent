@@ -156,18 +156,20 @@ All skills accept an optional `[project-name]` argument. If omitted and multiple
 
 Project-agent implements the [Karpathy memory layer pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): raw agent experiences accumulate in `learnings.json` files, and a promotion pipeline distills those entries into a structured, cross-referenced wiki. The result is a living knowledge base that compounds over time — future agents query it at dispatch to carry forward known-good patterns and avoid repeating known failures.
 
-**Vault location and layout.** The wiki lives at `~/projects/obsidian/project-agent/` — outside the repo so it can be opened as its own Obsidian workspace. Top-level directories: `wiki/` (global knowledge with subdirs `concepts/`, `patterns/`, `tools/`, `decisions/`, `gotchas/`) and `projects/{name}/` (per-project pages).
+**Vault location and layout.** The wiki lives at `~/projects/obsidian/project-agent/` — outside the repo so it can be opened as its own Obsidian workspace. Top-level directories: `wiki/` (global knowledge with subdirs `concepts/`, `patterns/`, `tools/`, `decisions/`, `gotchas/`, `templates/`), `projects/{name}/` (per-project pages, including `templates/`), and `assets/` (binary assets like images and PDFs referenced by template pages, split into `assets/global/` and `assets/projects/{name}/`).
 
 **Promotion pipeline.** Raw `learnings.json` entries → `/pa-wiki-ingest` → immutable source pages under `sources/` + merged wiki pages under `wiki/` or `projects/{name}/` → `/pa-wiki-query` at dispatch time, which injects relevant context into each agent's prompt.
 
-**Skills.** Four skills manage the wiki lifecycle. See each skill's own `SKILL.md` for full details.
+**Skills.** Six skills manage the wiki lifecycle. See each skill's own `SKILL.md` for full details.
 
 | Skill | What it does |
 |-------|-------------|
 | `/pa-wiki-ingest` | Promotes new `learnings.json` entries into the vault |
 | `/pa-wiki-query` | Retrieves relevant wiki pages for a ticket at dispatch time |
-| `/pa-wiki-lint` | Catches orphans, dead wikilinks, stale stubs, and missing back-links |
+| `/pa-wiki-lint` | Catches orphans, dead wikilinks, stale stubs, missing back-links, and broken asset references |
 | `/pa-wiki-status` | Shows vault health: page count, last ingest, pending learnings, lint score |
+| `/pa-patterns-capture` | Captures a file, directory, or freeform description as an approved template page (inline approval) |
+| `/pa-patterns-scan` | Surveys a directory for recurring code shapes and proposes 3–7 template candidates for per-item approval |
 
 **Configuration.**
 
@@ -178,6 +180,9 @@ Project-agent implements the [Karpathy memory layer pattern](https://gist.github
 | `wiki.auto_ingest` | `true` | Run `/pa-wiki-ingest` automatically after each ticket completes |
 | `wiki.auto_query` | `true` | Query the wiki at dispatch time to inject context into agent prompts |
 | `wiki.auto_lint_interval` | `null` | Informational only — start scheduled lint via the `/loop` recipe below |
+| `wiki.patterns.enabled` | `true` | Master switch for the patterns library (`/pa-patterns-capture`, `/pa-patterns-scan`). When `false`, those skills no-op with a message. |
+
+**Patterns library.** Two additional skills let you build a curated template library directly in the vault: `/pa-patterns-capture` captures a single file, directory, or freeform description as an approved template page, and `/pa-patterns-scan` surveys a directory for recurring code shapes and proposes 3–7 template candidates one at a time for inline approval. Both skills respect `wiki.enabled` and the dedicated `wiki.patterns.enabled` flag, so you can disable the patterns library independently of the rest of the wiki. Set `wiki.patterns.enabled: false` in your workspace or global config to no-op both skills without touching any other wiki feature.
 
 **Scheduled lint (opt-in).** A daily lint pass catches drift before it accumulates. To start one:
 

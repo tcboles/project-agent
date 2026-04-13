@@ -16,5 +16,15 @@
     "auto_verify": true,
     "default_priority": "P1",
     "max_concurrent_triage": 4
+  },
+  "wiki": {
+    "enabled": true,
+    "vault_path": "~/projects/obsidian/project-agent",
+    "auto_ingest": true,
+    "auto_query": true,
+    "auto_lint_interval": null,
+    "patterns": {
+      "enabled": true
+    }
   }
 }
