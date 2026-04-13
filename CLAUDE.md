@@ -154,6 +154,32 @@ Skills update board.json with corrections before proceeding. This makes the syst
 
 The vault at `~/projects/obsidian/project-agent/` is a living knowledge base that distills agent learnings into structured, cross-referenced wiki pages. Raw `learnings.json` entries are promoted into the vault via the ingest pipeline: each entry is written as an immutable source page, then merged into (or used to create) a wiki page in the appropriate category and scope. Agents query the vault at dispatch time to carry forward known-good patterns and avoid repeating known failure modes. See the `/pa-wiki-*` skills for ingest, query, and lint operations.
 
+See README § Wiki Memory Layer for details, config knobs, and the scheduled lint recipe.
+
+### Wiki Context Injection Format
+
+When `/assign-work` queries the wiki before dispatching an agent (Step 5b), the results are injected into the agent's dispatch prompt as a `## Relevant Wiki Context` block immediately after the `### Project Learnings` block. The exact format is:
+
+```
+## Relevant Wiki Context
+
+The following pages from the project-agent wiki may be relevant to this ticket. Treat them as authoritative background.
+
+### [category/slug](absolute-vault-path)
+<excerpt>
+
+### [category/slug](absolute-vault-path)
+<excerpt>
+```
+
+- The heading uses the page's category and filename slug derived from its vault path (e.g., `gotchas/worktree-isolation`).
+- The link target is the absolute filesystem path to the vault page — the same value as `- Path:` in the `/pa-wiki-query` output.
+- The excerpt is the 2-3 sentence excerpt from the `- Excerpt:` field of the query result.
+- Up to 5 results are injected (matching the default `--limit 5` of the query call).
+- The block is **omitted entirely** when `config.wiki.enabled` is false, `config.wiki.auto_query` is false, or the query returns zero results — so existing prompts are unchanged when wiki is disabled.
+
+**For agents receiving this block:** treat it as read-only background context. Wiki pages are updated only through the ingest pipeline (`/pa-wiki-ingest`), never by agents directly.
+
 ## Rules for Agents
 
 - Stay within the scope of the assigned ticket. Do not refactor unrelated code.

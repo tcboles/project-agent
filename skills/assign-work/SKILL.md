@@ -108,6 +108,33 @@ Agents will work in isolated git worktrees. Up to 6 will run in parallel.
 
 **Otherwise (manual mode)**, ask: **"Ready to dispatch these tickets?"** using `AskUserQuestion`. Only proceed to Step 6 if the user approves. If they want changes (e.g., skip a ticket, change priority, reassign an agent), make those adjustments first and re-present.
 
+### Step 5b: Wiki Query (Pre-Dispatch Hook)
+
+**This step runs before launching agents. Gate it with: `if config.wiki.enabled && config.wiki.auto_query`.**
+
+If both flags are true and the `/pa-wiki-query` skill is available, for each ready ticket:
+
+1. **Build the query string.** Concatenate the ticket title, category, and top keywords extracted from the ticket description:
+   - Take the ticket description text (first 500 characters is enough).
+   - Strip stopwords: `the, a, an, is, of, in, to, for, and, or, that, this, with, on, at, from, by, be, are, was, were, it, its, not, but, if, as, so, do, we, you, he, she, they, them, their, have, has, had, will, would, can, could, should`.
+   - Take up to 5 distinctive remaining terms.
+   - Final query = `"{ticket.title} {ticket.category} {top5terms}"`.
+2. **Invoke `/pa-wiki-query`** using the Skill tool:
+   ```
+   Skill: pa-wiki-query
+   Args: --query "{query}" --limit 5 --scope all
+   ```
+   (Omit `--project` to search all scopes — the ticket may be relevant to global patterns.)
+3. **Parse the output.** Locate `## Wiki Query Results` in the response. Read the `Results: {N}` header line. If `N === 0`, skip injection (nothing to inject). If `N > 0`:
+   - Collect each `### Result N` block.
+   - From each block, extract `- Path:`, `- Title:`, `- Category:`, and `- Excerpt:` fields using the pattern `^- (FieldName): (.+)$`.
+   - For each result, read the file at `Path` to get the full page content (truncated to 300 characters of body after the frontmatter fence if the page is long — excerpt is usually sufficient).
+4. **Build the `## Relevant Wiki Context` block** (see injection format in CLAUDE.md). Store it per-ticket for use when assembling the dispatch prompt in Step 6.
+
+**If `config.wiki.enabled` is false OR `config.wiki.auto_query` is false**, skip this step entirely. Existing flow is unchanged.
+
+**If the `/pa-wiki-query` skill is unavailable or returns an error**, skip silently — log a one-line note and continue. Never block dispatch over a wiki failure.
+
 ### Step 6: Dispatch Agents in Parallel
 
 **IMPORTANT: Launch agents concurrently, not sequentially.** Prepare all ticket prompts first, update board.json for all tickets, then make **multiple Agent tool calls in a single message** so they run in parallel. This is how Claude Code parallelizes work — multiple tool calls in one response execute simultaneously.
@@ -152,6 +179,11 @@ The following learnings were recorded by prior agents. Read them before starting
 
 ### Project Learnings (apply to this project specifically)
 {entries from {cwd}/.project-agent/projects/{name}/learnings.json}
+
+## Relevant Wiki Context
+{If config.wiki.enabled && config.wiki.auto_query AND Step 5b produced results for this ticket,
+insert the ## Relevant Wiki Context block here. Format per CLAUDE.md "Wiki Context Injection Format".
+If no results or wiki is disabled, omit this section entirely.}
 
 ## Working Directory
 You are working in the project at {project root path}. Explore the codebase before making changes.
@@ -202,6 +234,26 @@ You are working in the project at {project root path}. Explore the codebase befo
    - Set agent `current_ticket` to `null`
    - Set ticket `updated_at` to current ISO timestamp
    - If SECURITY_ISSUES is not "none", add a `[SECURITY]` note to the ticket
+
+### Step 6b: Wiki Ingest (Post-Completion Hook)
+
+**Run this after each agent completes and board.json is updated. Gate it with: `if config.wiki.enabled && config.wiki.auto_ingest`.**
+
+For each ticket that just moved to `review` or `done` status:
+
+1. **Check for new learnings.** Compare the entry count in each learnings.json tier (global, workspace, project) to the count captured before dispatch in Step 5b. If any tier has more entries now than it did before dispatch, new learnings were written.
+   - If you did not capture pre-dispatch counts, use a simpler heuristic: check whether any learnings entry has a `created_at` timestamp after the dispatch time for this ticket. An entry with no `ingested_at` field is also a signal it is newly written.
+2. **If new learnings exist**, invoke `/pa-wiki-ingest` using the Skill tool:
+   ```
+   Skill: pa-wiki-ingest
+   Args: --ticket {ticket_id}
+   ```
+   This ingests only the entries linked to this ticket (PA-003 guarantees idempotency — re-running on already-ingested entries is safe).
+3. **If no new learnings exist**, skip silently. The ingest is a no-op anyway per PA-003, but skipping avoids unnecessary skill invocations.
+
+**If `config.wiki.enabled` is false OR `config.wiki.auto_ingest` is false**, skip this step entirely.
+
+**If the `/pa-wiki-ingest` skill is unavailable or returns an error**, skip silently — log a one-line note and continue. Never block the orchestration loop over a wiki failure.
 
 ### Step 7: Report Results
 

@@ -152,6 +152,41 @@ my-workspace/
 
 All skills accept an optional `[project-name]` argument. If omitted and multiple projects exist, you'll be prompted to choose.
 
+## Wiki Memory Layer
+
+Project-agent implements the [Karpathy memory layer pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): raw agent experiences accumulate in `learnings.json` files, and a promotion pipeline distills those entries into a structured, cross-referenced wiki. The result is a living knowledge base that compounds over time — future agents query it at dispatch to carry forward known-good patterns and avoid repeating known failures.
+
+**Vault location and layout.** The wiki lives at `~/projects/obsidian/project-agent/` — outside the repo so it can be opened as its own Obsidian workspace. Top-level directories: `wiki/` (global knowledge with subdirs `concepts/`, `patterns/`, `tools/`, `decisions/`, `gotchas/`) and `projects/{name}/` (per-project pages).
+
+**Promotion pipeline.** Raw `learnings.json` entries → `/pa-wiki-ingest` → immutable source pages under `sources/` + merged wiki pages under `wiki/` or `projects/{name}/` → `/pa-wiki-query` at dispatch time, which injects relevant context into each agent's prompt.
+
+**Skills.** Four skills manage the wiki lifecycle. See each skill's own `SKILL.md` for full details.
+
+| Skill | What it does |
+|-------|-------------|
+| `/pa-wiki-ingest` | Promotes new `learnings.json` entries into the vault |
+| `/pa-wiki-query` | Retrieves relevant wiki pages for a ticket at dispatch time |
+| `/pa-wiki-lint` | Catches orphans, dead wikilinks, stale stubs, and missing back-links |
+| `/pa-wiki-status` | Shows vault health: page count, last ingest, pending learnings, lint score |
+
+**Configuration.**
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `wiki.enabled` | `true` | Master switch — disables all wiki features when `false` |
+| `wiki.vault_path` | `~/projects/obsidian/project-agent` | Absolute path to the Obsidian vault |
+| `wiki.auto_ingest` | `true` | Run `/pa-wiki-ingest` automatically after each ticket completes |
+| `wiki.auto_query` | `true` | Query the wiki at dispatch time to inject context into agent prompts |
+| `wiki.auto_lint_interval` | `null` | Informational only — start scheduled lint via the `/loop` recipe below |
+
+**Scheduled lint (opt-in).** A daily lint pass catches drift before it accumulates. To start one:
+
+```
+/loop 1d /pa-wiki-lint
+```
+
+This uses the existing `/loop` skill to run `/pa-wiki-lint` every 24 hours. It is opt-in — project-agent never starts the loop automatically. To stop it, end the `/loop` session. The lint pass checks for orphaned source pages, dead wikilinks, stale stubs with no body beyond the template skeleton, and pages missing required front-matter fields.
+
 ## Three-Tier Learnings
 
 When agents discover something non-obvious about a codebase, they record it so future agents don't repeat the same mistakes. Learnings are scoped to three tiers:

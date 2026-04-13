@@ -38,7 +38,8 @@ This is a more thorough version of the standard board reconciliation, because we
    - If ticket has handoff notes → set to `review`
    - If ticket has no handoff notes → set to `backlog` (agent was interrupted, work is incomplete)
 5. **Check for unanswered questions:** Read `## Questions` sections of blocked tickets. If there are unrouted questions, queue them for routing.
-6. **Write all corrections to board.json.**
+6. **Catch-up wiki ingest:** If `config.wiki.enabled && config.wiki.auto_ingest`, invoke `pa-wiki-ingest` with no arguments — per the ingest skill's default behavior, this processes all learnings entries across all tiers that have no `ingested_at` field. These are typically entries written before the interruption that were never promoted to the vault. Skip silently if the skill is unavailable.
+7. **Write all corrections to board.json.**
 
 ### Step 3: Present Recovery Report
 

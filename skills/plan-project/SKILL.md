@@ -226,7 +226,9 @@ Handle the answer:
 
 ## Phase 7: Orchestrate the Board
 
-Once `execution_mode` is set, **you own the board**. Drive it to completion by running the orchestration loop:
+Once `execution_mode` is set, **you own the board**. Drive it to completion by running the orchestration loop.
+
+> **Wiki hooks are inherited from `/assign-work`.** The pre-dispatch wiki query (Step 5b) and post-completion wiki ingest (Step 6b) defined in `skills/assign-work/SKILL.md` fire automatically when you follow the `/assign-work` workflow below. No duplicate logic needed here — just follow that workflow and the hooks run as part of it.
 
 1. **Dispatch ready tickets** — follow the `/assign-work` workflow: reconcile the board, find tickets with satisfied dependencies, present what you're about to dispatch, get user approval (unless `execution_mode === "autonomous"`), then launch agents.
 2. **Wait for agents to complete** — update board.json as each agent finishes.

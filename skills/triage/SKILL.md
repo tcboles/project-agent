@@ -87,7 +87,15 @@ Agent({
     6. If you dispatched a fix agent and auto_verify is true, verify the fix
        (run tests, check acceptance criteria).
     7. Update the ticket and board.json with final status.
-    8. Report your triage summary.
+    8. **Wiki ingest (post-completion hook):** If config.wiki.enabled && config.wiki.auto_ingest
+       AND the fix agent wrote new learnings entries (any learnings.json entry with no
+       ingested_at and a created_at after dispatch time), invoke the pa-wiki-ingest skill:
+         Skill: pa-wiki-ingest
+         Args: --ticket {ticket_id}
+       If the skill is unavailable or returns an error, skip silently. Never fail triage
+       over a wiki ingest failure. (Skip the dispatch-time wiki query — triage is
+       single-agent and short-lived; noisy query results would slow fire-and-forget.)
+    9. Report your triage summary.
   "
 })
 ```
