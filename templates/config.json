@@ -10,6 +10,9 @@
   "autonomous": false,
   "auto_review": true,
   "auto_merge": false,
+  "dispatch": {
+    "isolation_mode": "auto"
+  },
   "ticket_id_prefix": "PA",
   "triage": {
     "auto_fix": true,

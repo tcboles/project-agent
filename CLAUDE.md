@@ -106,6 +106,7 @@ Settings are loaded from two levels (workspace overrides global):
 | `triage.default_priority` | `"P1"` | Default priority for triaged bugs |
 | `triage.max_concurrent_triage` | `4` | Max background triage agents simultaneously |
 | `wiki.patterns.enabled` | `true` | Master switch for the patterns library (/pa-patterns-capture, /pa-patterns-scan). When false, those skills no-op with a message. |
+| `dispatch.isolation_mode` | `"auto"` | How `/assign-work` dispatches agents. `"worktree"` = each agent in an isolated git worktree on a `claude-worktree-*` branch (merged back via `/merge-work` Flow A). `"working-tree"` = agents share the main checkout and the orchestrator commits at merge time (Flow B). `"auto"` probes after the first wave and caches the result for the session. |
 
 When reading config, load global first, then merge workspace config on top (workspace values override global). If no config file exists at either level, use the defaults above.
 

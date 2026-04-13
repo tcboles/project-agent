@@ -39,7 +39,7 @@ Read config from two levels and merge (workspace overrides global):
 1. Global: `~/.claude/project-agent/config.json`
 2. Workspace: `{cwd}/.project-agent/config.json`
 
-If neither exists, use defaults: `max_concurrent_agents: 6`, `default_model: "sonnet"`, all agents enabled, `autonomous: false`, `auto_review: true`, `auto_merge: false`.
+If neither exists, use defaults: `max_concurrent_agents: 6`, `default_model: "sonnet"`, all agents enabled, `autonomous: false`, `auto_review: true`, `auto_merge: false`, `dispatch.isolation_mode: "auto"`.
 
 Use these settings throughout the workflow — especially `max_concurrent_agents` for the dispatch limit, agent `enabled` flags when matching tickets to agents, and `auto_review`/`auto_merge` for the orchestration loop.
 
@@ -53,6 +53,30 @@ Use these settings throughout the workflow — especially `max_concurrent_agents
    > 2. **Approve each step** — prompt me before dispatch, review, and merge
    
    Cache the answer for the rest of this skill run as `execution_mode`.
+
+### Step 0b: Resolve Agent Isolation Mode
+
+Agents can dispatch in one of two modes. This determines how the orchestrator and the agents cooperate on the filesystem:
+
+- **`worktree`** — each agent runs in an isolated git worktree on its own `claude-worktree-*` branch. The agent commits its own changes; the orchestrator merges branches back via `/merge-work`.
+- **`working-tree`** — agents write directly into the shared main working tree. No worktrees or branches are created. The orchestrator commits all changes at merge time via `/merge-work`'s working-tree flow.
+
+Resolution algorithm:
+
+1. Read `dispatch.isolation_mode` from config. Valid values: `"auto" | "worktree" | "working-tree"`. Default: `"auto"`.
+2. If a prior `/assign-work` invocation in **this same session** already resolved the mode, reuse the cached value `session.isolation_mode` — do not re-probe.
+3. If the config value is `"worktree"` or `"working-tree"` (explicit), set `session.isolation_mode` to that value and skip probing.
+4. If the config value is `"auto"`:
+   - Capture a pre-dispatch snapshot: `git branch --list 'claude-worktree-*'` and `git worktree list --porcelain`. Save the output.
+   - Tentatively plan to pass `isolation: "worktree"` on the first wave's Agent calls.
+   - After the first wave completes (end of Step 6, before Step 6b), re-run both commands. If the diff shows any new `claude-worktree-*` branches or any new worktree entries, set `session.isolation_mode = "worktree"` and print: `Agent isolation probe: worktree isolation is active.`
+   - If the diff shows no new entries, set `session.isolation_mode = "working-tree"` and print: `Agent isolation probe: worktree support unavailable in this environment — using working-tree mode. Agents share the main checkout; the orchestrator will commit at merge time.`
+5. If the project is not a git repo at all (`git rev-parse --git-dir` fails), force `session.isolation_mode = "working-tree"` and note this to the user.
+
+The resolved mode controls three things downstream:
+- Whether `isolation: "worktree"` is passed on each `Agent` dispatch call (Step 6).
+- Which `## Commit Policy` block is injected into the agent prompt (Step 6).
+- Which flow `/merge-work` takes when called from the orchestration loop (Step 8).
 
 ### Step 1: Read and Reconcile Board State
 
@@ -154,7 +178,7 @@ For up to `max_concurrent_agents` tickets at a time (from config, default 6):
    - Set agent `current_ticket` to the ticket id
 3. **Launch ALL agents in a single message.** Use multiple Agent tool calls in one response — this is critical for parallelism. Each Agent call uses these parameters:
    - `description`: The ticket title
-   - `isolation`: `"worktree"` — each agent works in an isolated git worktree
+   - `isolation`: pass `"worktree"` **only if** `session.isolation_mode === "worktree"`, OR if `session.isolation_mode` is still unresolved and this is the first wave under `"auto"` mode (probe in progress). **Omit** the `isolation` parameter entirely when `session.isolation_mode === "working-tree"`.
    - `prompt`: Combine the agent definition (as behavioral instructions) with the full ticket content (as the task). Structure the prompt as:
 
 ```
@@ -187,6 +211,33 @@ If no results or wiki is disabled, omit this section entirely.}
 
 ## Working Directory
 You are working in the project at {project root path}. Explore the codebase before making changes.
+
+## Commit Policy
+
+{Insert ONE of the two blocks below based on session.isolation_mode. Do not include both.}
+
+{--- If session.isolation_mode === "worktree": ---}
+You are running inside an isolated git worktree on a dedicated branch named
+`claude-worktree-{ticket_id}`. Before you finish:
+1. Use relative paths from the worktree root whenever possible. If you must use an
+   absolute path, it MUST point inside the worktree — never edit files in the
+   original `{project root path}` directly.
+2. Stage your changes: `git add -A`
+3. Commit with: `git commit -m "PA-NNN: {ticket title} (agent work)"`
+4. The orchestrator will merge your branch back into main via /merge-work.
+Do NOT push. Do NOT delete the branch. The orchestrator owns the merge and cleanup.
+
+{--- If session.isolation_mode === "working-tree": ---}
+You are working directly in the shared project tree at {project root path}.
+Other agents may be running in parallel in the same tree, so conflict avoidance
+is YOUR responsibility:
+1. Stay STRICTLY within the files listed in your ticket's `## Files Involved`
+   section. Do not touch files outside that list even if they seem related.
+2. Do NOT run `git commit`, `git add`, `git push`, or create branches. The
+   orchestrator owns all git state and will commit all wave changes together
+   via /merge-work's working-tree flow.
+3. If you must read a file outside your Files Involved list to understand
+   context, that is fine — just do not modify it.
 
 ## When Done
 1. Update the ticket's ## Handoff Notes section with: what files you changed, what you built,
@@ -235,6 +286,17 @@ You are working in the project at {project root path}. Explore the codebase befo
    - Set ticket `updated_at` to current ISO timestamp
    - If SECURITY_ISSUES is not "none", add a `[SECURITY]` note to the ticket
 
+### Step 6a: Resolve Isolation Mode (Auto-Probe Only)
+
+**Only runs when `dispatch.isolation_mode === "auto"` AND `session.isolation_mode` is still unresolved.** If the mode was already explicit or cached, skip this step.
+
+1. Run `git branch --list 'claude-worktree-*'` and compare the output against the pre-dispatch snapshot captured in Step 0b.
+2. Run `git worktree list --porcelain` and compare against the pre-dispatch snapshot.
+3. If either command shows new entries, set `session.isolation_mode = "worktree"` and print: `Agent isolation probe: worktree isolation active — continuing with worktree mode for remaining waves.`
+4. If neither command shows new entries, set `session.isolation_mode = "working-tree"` and print: `Agent isolation probe: worktree support unavailable — falling back to working-tree mode for remaining waves. Agents will share the main checkout; merge-work will commit at the end.`
+5. Persist the resolution for the rest of the session — subsequent waves in this `/assign-work` run and subsequent `/assign-work` / `/review-board` / `/merge-work` invocations all read `session.isolation_mode` directly.
+6. If the resolution is `"working-tree"` and the first wave produced uncommitted changes in the main working tree (expected outcome), do NOT commit here — that is `/merge-work`'s job. Just note the state in the Step 7 results report.
+
 ### Step 6b: Wiki Ingest (Post-Completion Hook)
 
 **Run this after each agent completes and board.json is updated. Gate it with: `if config.wiki.enabled && config.wiki.auto_ingest`.**
@@ -280,4 +342,5 @@ The user approves at each checkpoint but does not need to manually invoke each s
 - **Always update board.json before AND after agent dispatch.** This keeps the board consistent even if an agent fails.
 - **Read ticket files fresh every time.** Do not rely on cached content.
 - **If no tickets are ready**, explain why (all done, all blocked, dependencies pending) and suggest next steps.
-- **If the project doesn't use git**, skip worktree isolation and note this to the user.
+- **Isolation mode is resolved in Step 0b** (explicit config) **or Step 6a** (auto-probe after first wave). Once resolved, it is sticky for the session. In working-tree mode, agents share the main checkout — rely on ticket `Files Involved` sections to avoid overlap, and keep `max_concurrent_agents` modest if tickets touch adjacent files.
+- **If the project doesn't use git**, force `session.isolation_mode = "working-tree"` and note this to the user.
