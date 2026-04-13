@@ -196,21 +196,49 @@ PA-001 (architect) → PA-002 (developer) → PA-005 (tester)
 PA-004 (developer, no deps) → PA-006 (tester)
 ```
 
-Ask the user to review and approve. If they want changes, iterate on the tickets before finalizing.
+### Execution Mode Prompt
+
+After showing the plan and dependency graph, decide how the user wants to execute.
+
+**First, check config.** Read `autonomous` from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merging workspace over global. If `autonomous === true`, skip the prompt below, set session variable `execution_mode = "autonomous"`, and log:
+
+```
+Autonomous mode (from config) — proceeding without approval prompts.
+```
+
+Then jump to Phase 7.
+
+**Otherwise, ask the user** using `AskUserQuestion`:
+
+> **Question:** "Claude has written up the plan and is ready to execute. How would you like to proceed?"
+>
+> **Options:**
+> 1. **Run autonomously** — dispatch, review, and merge without further approval prompts
+> 2. **Approve each step** — prompt me before dispatch, review, and merge (default)
+> 3. **Refine the plan** — iterate on tickets before starting
+
+Handle the answer:
+- **Option 1** → set `execution_mode = "autonomous"`, proceed to Phase 7.
+- **Option 2** → set `execution_mode = "manual"`, proceed to Phase 7.
+- **Option 3** → iterate on the tickets (edit, split, reprioritize as the user requests) and re-present Phase 6 from the top.
+
+`execution_mode` is an in-memory session variable. It is NOT written to config. Thread it through every sub-skill invocation in Phase 7 so downstream skills know whether to skip their own approval gates.
 
 ## Phase 7: Orchestrate the Board
 
-Once the user approves the plan, **you own the board**. Drive it to completion by running the orchestration loop:
+Once `execution_mode` is set, **you own the board**. Drive it to completion by running the orchestration loop:
 
-1. **Dispatch ready tickets** — follow the `/assign-work` workflow: reconcile the board, find tickets with satisfied dependencies, present what you're about to dispatch, get user approval, then launch agents.
+1. **Dispatch ready tickets** — follow the `/assign-work` workflow: reconcile the board, find tickets with satisfied dependencies, present what you're about to dispatch, get user approval (unless `execution_mode === "autonomous"`), then launch agents.
 2. **Wait for agents to complete** — update board.json as each agent finishes.
 3. **Review completed work** — follow the `/review-board` workflow: run the reviewer agent against tickets in `review` status. Approved tickets move to `done`; rejected tickets go back to `backlog` with feedback.
 4. **Loop** — after reviews, check if new tickets are now ready (their dependencies just moved to `done`). If so, go back to step 1. Continue until:
    - All tickets are `done` → proceed to step 5
    - All remaining tickets are `blocked` → stop and explain the blockers to the user
-5. **Merge** — once all tickets are done, follow the `/merge-work` workflow: present the merge plan, get approval, merge worktrees in dependency order.
+5. **Merge** — once all tickets are done, follow the `/merge-work` workflow: present the merge plan, get approval (unless `execution_mode === "autonomous"` and there are no conflicts), merge worktrees in dependency order.
 
-**At each checkpoint (dispatching agents, merging), present the plan and get user approval before proceeding.** The user should see what's about to happen but shouldn't need to manually invoke each skill.
+**At each checkpoint, the plan table is still printed to stdout** so the user has an audit trail — `execution_mode === "autonomous"` only skips the blocking `AskUserQuestion`, not the summary. In `"manual"` mode, present the plan and get user approval before proceeding at each gate.
+
+**Autonomous mode does NOT bypass `@user` questions from agents or merge conflicts.** Those still pause the loop for human input — they are genuine blockers, not approval gates.
 
 If the user interrupts or the session ends, the board state is preserved. The user can resume by running `/assign-work` or `/check-status` to pick up where things left off.
 

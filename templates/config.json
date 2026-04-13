@@ -7,6 +7,7 @@
     "tester": { "enabled": true, "model": null },
     "reviewer": { "enabled": true, "model": null }
   },
+  "autonomous": false,
   "auto_review": true,
   "auto_merge": false,
   "ticket_id_prefix": "PA",

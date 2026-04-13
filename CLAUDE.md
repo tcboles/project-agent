@@ -84,6 +84,7 @@ Settings are loaded from two levels (workspace overrides global):
     "tester": { "enabled": true, "model": null },
     "reviewer": { "enabled": true, "model": null }
   },
+  "autonomous": false,
   "auto_review": true,
   "auto_merge": false,
   "ticket_id_prefix": "PA"
@@ -96,6 +97,7 @@ Settings are loaded from two levels (workspace overrides global):
 | `default_model` | `"sonnet"` | Model for agents unless overridden per-agent |
 | `agents.{name}.enabled` | `true` | Set `false` to skip this agent type entirely |
 | `agents.{name}.model` | `null` | Override model for a specific agent (`null` = use `default_model`) |
+| `autonomous` | `false` | When `true`, skips all approval prompts (plan, dispatch, review, merge, recovery) for the session. Merge conflicts and `@user` questions from agents still pause. |
 | `auto_review` | `true` | Automatically run reviews after agents complete |
 | `auto_merge` | `false` | Automatically merge after all tickets are done (if `true`, skips the merge approval prompt) |
 | `ticket_id_prefix` | `"PA"` | Prefix for ticket IDs (e.g., `PA-001`). Change to `MW` for marketing-website tickets |
@@ -147,6 +149,10 @@ Skills update board.json with corrections before proceeding. This makes the syst
 
 ### Recovery
 8. **`/recover [project-name]`** — Recover from an interrupted session. Performs deep reconciliation (resets stale agents, detects orphaned work, routes unanswered questions), presents a recovery report, and re-enters the orchestration loop.
+
+## Wiki Memory Layer
+
+The vault at `~/projects/obsidian/project-agent/` is a living knowledge base that distills agent learnings into structured, cross-referenced wiki pages. Raw `learnings.json` entries are promoted into the vault via the ingest pipeline: each entry is written as an immutable source page, then merged into (or used to create) a wiki page in the appropriate category and scope. Agents query the vault at dispatch time to carry forward known-good patterns and avoid repeating known failure modes. See the `/pa-wiki-*` skills for ingest, query, and lint operations.
 
 ## Rules for Agents
 
@@ -200,3 +206,13 @@ The orchestrator routes questions: dispatches the target agent with the question
 /review-board mobile-app    → review completed mobile app tickets
 /merge-work mobile-app      → integrate done tickets into main branch
 ```
+
+### Autonomous Execution
+
+After `/plan-project` finishes writing the plan, the skill asks how to proceed:
+
+1. **Run autonomously** — dispatch, review, and merge without further approval prompts
+2. **Approve each step** — prompt before each stage (default, current behavior)
+3. **Refine the plan** — iterate on tickets first
+
+Picking option 1 runs the full `/assign-work` → `/review-board` → `/merge-work` loop with no further blocking prompts. To make this the default, set `autonomous: true` in workspace or global config. Every skipped approval gate still prints its plan table to stdout, so the user has a full audit trail on scrollback. Merge conflicts and `@user` questions from agents still pause the loop — autonomous mode only skips approval prompts, not genuine human-required inputs.

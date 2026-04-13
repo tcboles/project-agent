@@ -69,9 +69,12 @@ Show the user what was recovered:
 
 ### Step 4: Get Approval and Continue
 
-Ask the user: **"Ready to resume the orchestration loop?"** using AskUserQuestion.
+**Determine execution mode.** Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merging workspace over global.
 
-If approved, determine where to re-enter the loop:
+- If config `autonomous === true` → set `execution_mode = "autonomous"`, skip the approval prompt below, log `"Autonomous mode (from config) — resuming without approval."`, and jump straight into the re-entry branch logic.
+- Otherwise, ask the user: **"Ready to resume the orchestration loop?"** using `AskUserQuestion`. If they answer yes, also offer a follow-up choice of execution mode for the remainder of the run (autonomous vs. manual), the same way `/plan-project` Phase 6 does. Cache the chosen mode as `execution_mode` and thread it through every sub-skill invocation.
+
+Once approved, determine where to re-enter the loop:
 
 1. **If there are tickets in `review`** → start with the `/review-board` workflow
 2. **If there are ready tickets in `backlog`** → start with the `/assign-work` workflow

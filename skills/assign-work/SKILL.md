@@ -39,9 +39,20 @@ Read config from two levels and merge (workspace overrides global):
 1. Global: `~/.claude/project-agent/config.json`
 2. Workspace: `{cwd}/.project-agent/config.json`
 
-If neither exists, use defaults: `max_concurrent_agents: 6`, `default_model: "sonnet"`, all agents enabled, `auto_review: true`, `auto_merge: false`.
+If neither exists, use defaults: `max_concurrent_agents: 6`, `default_model: "sonnet"`, all agents enabled, `autonomous: false`, `auto_review: true`, `auto_merge: false`.
 
 Use these settings throughout the workflow — especially `max_concurrent_agents` for the dispatch limit, agent `enabled` flags when matching tickets to agents, and `auto_review`/`auto_merge` for the orchestration loop.
+
+**Determine execution mode.** If `/assign-work` was invoked from `/plan-project` Phase 7, the caller passes an `execution_mode` (`"autonomous"` or `"manual"`) which you should honor. Otherwise, determine it here:
+
+1. If config `autonomous === true`, set `execution_mode = "autonomous"` and log `"Autonomous mode (from config) — no approval prompts."`.
+2. Otherwise, after Step 4 (matching tickets to agents) but before Step 5, ask the user via `AskUserQuestion`:
+   > **Question:** "How would you like to proceed with this run?"
+   > **Options:**
+   > 1. **Run autonomously** — dispatch, review, and merge without further approval prompts
+   > 2. **Approve each step** — prompt me before dispatch, review, and merge
+   
+   Cache the answer for the rest of this skill run as `execution_mode`.
 
 ### Step 1: Read and Reconcile Board State
 
@@ -79,7 +90,7 @@ For each ready ticket, match its `category` field to an agent `id`:
 
 ### Step 5: Present Plan and Get Approval
 
-**Do NOT dispatch agents yet.** Present the user with a summary of what you're about to do:
+**Always print the dispatch plan first**, regardless of execution mode — the user needs an audit trail:
 
 ```
 ## Ready to Assign — {project-name}
@@ -93,7 +104,9 @@ For each ready ticket, match its `category` field to an agent `id`:
 Agents will work in isolated git worktrees. Up to 6 will run in parallel.
 ```
 
-Then ask: **"Ready to dispatch these tickets?"** using AskUserQuestion. Only proceed to Step 6 if the user approves. If they want changes (e.g., skip a ticket, change priority, reassign an agent), make those adjustments first and re-present.
+**If `execution_mode === "autonomous"`**, skip the approval prompt. Log `"Autonomous mode — dispatching {N} tickets."` and proceed directly to Step 6.
+
+**Otherwise (manual mode)**, ask: **"Ready to dispatch these tickets?"** using `AskUserQuestion`. Only proceed to Step 6 if the user approves. If they want changes (e.g., skip a ticket, change priority, reassign an agent), make those adjustments first and re-present.
 
 ### Step 6: Dispatch Agents in Parallel
 

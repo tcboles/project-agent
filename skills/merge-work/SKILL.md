@@ -24,6 +24,14 @@ Project data:
 
 ## Workflow
 
+### Step 0: Load Configuration
+
+Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merging workspace over global. Defaults: `autonomous: false`.
+
+**Determine execution mode.** If `/merge-work` was invoked from `/plan-project` Phase 7, the caller passes an `execution_mode`. Otherwise, read `autonomous` from config:
+- If `autonomous === true` → `execution_mode = "autonomous"`
+- Otherwise → `execution_mode = "manual"`
+
 ### Step 1: Identify Completed Worktrees
 
 Read the board.json for the resolved project. Find all tickets with `status === "done"` that have worktree branches to merge.
@@ -52,7 +60,7 @@ For each branch, before merging:
 
 ### Step 4: Present Merge Plan and Get Approval
 
-**Do NOT merge yet.** Show the user what will be merged:
+**Always print the merge plan first**, regardless of execution mode:
 
 ```
 ## Ready to Merge — {project-name}
@@ -66,7 +74,13 @@ Merge order: PA-001 → PA-003 (dependency order)
 A restore tag will be created before merging.
 ```
 
-Ask: **"Ready to merge these branches?"** using AskUserQuestion. If there are conflicts, highlight them and ask how to handle each one before proceeding.
+Count how many branches have conflicts (from Step 3).
+
+**If `execution_mode === "autonomous"` AND conflict count === 0**, skip the approval prompt. Log `"Autonomous mode — merging {N} branches."` and proceed to Step 5.
+
+**If `execution_mode === "autonomous"` AND conflict count > 0**, pause and prompt anyway. Log `"Autonomous mode — but {N} branches have conflicts; pausing for input."` Conflict resolution needs human judgment.
+
+**Otherwise (manual mode)**, ask: **"Ready to merge these branches?"** using `AskUserQuestion`. If there are conflicts, highlight them and ask how to handle each one before proceeding.
 
 ### Step 5: Merge Strategy
 

@@ -43,9 +43,13 @@ For each ticket in review:
 
 Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merge workspace over global. Check if `agents.reviewer.enabled` is `false` — if so, skip reviews and move tickets directly from `review` to `done`.
 
+**Determine execution mode.** If `/review-board` was invoked from `/plan-project` Phase 7, the caller passes an `execution_mode`. Otherwise, read `autonomous` from config:
+- If `autonomous === true` → `execution_mode = "autonomous"`
+- Otherwise → `execution_mode = "manual"`
+
 ### Step 3: Present Review Plan and Get Approval
 
-**Do NOT dispatch reviewers yet.** Show the user what will be reviewed:
+**Always print the review plan**, regardless of execution mode:
 
 ```
 ## Ready for Review — {project-name}
@@ -59,7 +63,9 @@ The reviewer agent will check each ticket against its acceptance criteria,
 run tests, and produce a verdict (APPROVE, REQUEST_CHANGES, or BLOCK).
 ```
 
-Ask: **"Ready to run reviews on these tickets?"** using AskUserQuestion. Only proceed if the user approves.
+**If `execution_mode === "autonomous"`**, skip the approval prompt. Log `"Autonomous mode — running reviews on {N} tickets."` and proceed to Step 4.
+
+**Otherwise (manual mode)**, ask: **"Ready to run reviews on these tickets?"** using `AskUserQuestion`. Only proceed if the user approves.
 
 ### Step 4: Dispatch Reviewer Agents in Parallel
 
