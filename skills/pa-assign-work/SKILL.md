@@ -1,5 +1,5 @@
 ---
-name: assign-work
+name: pa-assign-work
 description: >-
   Reads the project board, finds tickets ready for work (dependencies satisfied),
   assigns them to specialized agents, and launches subagents in isolated worktrees.
@@ -15,11 +15,11 @@ Dispatch ready tickets to specialized agents for autonomous implementation.
 
 This system supports **multiple projects per workspace**. Resolve the target project:
 
-1. If the user specified a project name (e.g., `/assign-work mobile-app`), use it.
+1. If the user specified a project name (e.g., `/pa-assign-work mobile-app`), use it.
 2. If not, read `.project-agent/registry.json` from the cwd.
    - If only one project exists, use it.
    - If multiple exist, ask the user which one.
-   - If none exist, tell the user to run `/plan-project` first.
+   - If none exist, tell the user to run `/pa-plan-project` first.
 
 Project data paths:
 - Board: `{cwd}/.project-agent/projects/{name}/board.json`
@@ -43,7 +43,7 @@ If neither exists, use defaults: `max_concurrent_agents: 6`, `default_model: "so
 
 Use these settings throughout the workflow — especially `max_concurrent_agents` for the dispatch limit, agent `enabled` flags when matching tickets to agents, and `auto_review`/`auto_merge` for the orchestration loop.
 
-**Determine execution mode.** If `/assign-work` was invoked from `/plan-project` Phase 7, the caller passes an `execution_mode` (`"autonomous"` or `"manual"`) which you should honor. Otherwise, determine it here:
+**Determine execution mode.** If `/pa-assign-work` was invoked from `/pa-plan-project` Phase 7, the caller passes an `execution_mode` (`"autonomous"` or `"manual"`) which you should honor. Otherwise, determine it here:
 
 1. If config `autonomous === true`, set `execution_mode = "autonomous"` and log `"Autonomous mode (from config) — no approval prompts."`.
 2. Otherwise, after Step 4 (matching tickets to agents) but before Step 5, ask the user via `AskUserQuestion`:
@@ -58,13 +58,13 @@ Use these settings throughout the workflow — especially `max_concurrent_agents
 
 Agents can dispatch in one of two modes. This determines how the orchestrator and the agents cooperate on the filesystem:
 
-- **`worktree`** — each agent runs in an isolated git worktree on its own `claude-worktree-*` branch. The agent commits its own changes; the orchestrator merges branches back via `/merge-work`.
-- **`working-tree`** — agents write directly into the shared main working tree. No worktrees or branches are created. The orchestrator commits all changes at merge time via `/merge-work`'s working-tree flow.
+- **`worktree`** — each agent runs in an isolated git worktree on its own `claude-worktree-*` branch. The agent commits its own changes; the orchestrator merges branches back via `/pa-merge-work`.
+- **`working-tree`** — agents write directly into the shared main working tree. No worktrees or branches are created. The orchestrator commits all changes at merge time via `/pa-merge-work`'s working-tree flow.
 
 Resolution algorithm:
 
 1. Read `dispatch.isolation_mode` from config. Valid values: `"auto" | "worktree" | "working-tree"`. Default: `"auto"`.
-2. If a prior `/assign-work` invocation in **this same session** already resolved the mode, reuse the cached value `session.isolation_mode` — do not re-probe.
+2. If a prior `/pa-assign-work` invocation in **this same session** already resolved the mode, reuse the cached value `session.isolation_mode` — do not re-probe.
 3. If the config value is `"worktree"` or `"working-tree"` (explicit), set `session.isolation_mode` to that value and skip probing.
 4. If the config value is `"auto"`:
    - Capture a pre-dispatch snapshot: `git branch --list 'claude-worktree-*'` and `git worktree list --porcelain`. Save the output.
@@ -76,11 +76,11 @@ Resolution algorithm:
 The resolved mode controls three things downstream:
 - Whether `isolation: "worktree"` is passed on each `Agent` dispatch call (Step 6).
 - Which `## Commit Policy` block is injected into the agent prompt (Step 6).
-- Which flow `/merge-work` takes when called from the orchestration loop (Step 8).
+- Which flow `/pa-merge-work` takes when called from the orchestration loop (Step 8).
 
 ### Step 1: Read and Reconcile Board State
 
-Read the board.json for the resolved project. If it has no tickets, tell the user to run `/plan-project` first.
+Read the board.json for the resolved project. If it has no tickets, tell the user to run `/pa-plan-project` first.
 
 **Before proceeding, reconcile board.json against the actual ticket files.** Board.json is a cache — ticket files are the source of truth. For each ticket in board.json:
 
@@ -224,7 +224,7 @@ You are running inside an isolated git worktree on a dedicated branch named
    original `{project root path}` directly.
 2. Stage your changes: `git add -A`
 3. Commit with: `git commit -m "PA-NNN: {ticket title} (agent work)"`
-4. The orchestrator will merge your branch back into main via /merge-work.
+4. The orchestrator will merge your branch back into main via /pa-merge-work.
 Do NOT push. Do NOT delete the branch. The orchestrator owns the merge and cleanup.
 
 {--- If session.isolation_mode === "working-tree": ---}
@@ -235,7 +235,7 @@ is YOUR responsibility:
    section. Do not touch files outside that list even if they seem related.
 2. Do NOT run `git commit`, `git add`, `git push`, or create branches. The
    orchestrator owns all git state and will commit all wave changes together
-   via /merge-work's working-tree flow.
+   via /pa-merge-work's working-tree flow.
 3. If you must read a file outside your Files Involved list to understand
    context, that is fine — just do not modify it.
 
@@ -294,8 +294,8 @@ is YOUR responsibility:
 2. Run `git worktree list --porcelain` and compare against the pre-dispatch snapshot.
 3. If either command shows new entries, set `session.isolation_mode = "worktree"` and print: `Agent isolation probe: worktree isolation active — continuing with worktree mode for remaining waves.`
 4. If neither command shows new entries, set `session.isolation_mode = "working-tree"` and print: `Agent isolation probe: worktree support unavailable — falling back to working-tree mode for remaining waves. Agents will share the main checkout; merge-work will commit at the end.`
-5. Persist the resolution for the rest of the session — subsequent waves in this `/assign-work` run and subsequent `/assign-work` / `/review-board` / `/merge-work` invocations all read `session.isolation_mode` directly.
-6. If the resolution is `"working-tree"` and the first wave produced uncommitted changes in the main working tree (expected outcome), do NOT commit here — that is `/merge-work`'s job. Just note the state in the Step 7 results report.
+5. Persist the resolution for the rest of the session — subsequent waves in this `/pa-assign-work` run and subsequent `/pa-assign-work` / `/pa-review-board` / `/pa-merge-work` invocations all read `session.isolation_mode` directly.
+6. If the resolution is `"working-tree"` and the first wave produced uncommitted changes in the main working tree (expected outcome), do NOT commit here — that is `/pa-merge-work`'s job. Just note the state in the Step 7 results report.
 
 ### Step 6b: Wiki Ingest (Post-Completion Hook)
 
@@ -328,10 +328,10 @@ After all dispatched agents complete, show:
 
 **Do not stop here.** After reporting results, automatically continue:
 
-1. **If there are tickets in `review` status** — proceed to the `/review-board` workflow: present the review plan, get approval, dispatch reviewer agents, process results.
+1. **If there are tickets in `review` status** — proceed to the `/pa-review-board` workflow: present the review plan, get approval, dispatch reviewer agents, process results.
 2. **After reviews complete, reconcile the board** and check for newly ready tickets (dependencies satisfied by tickets that just moved to `done`).
 3. **If there are ready tickets** — loop back to Step 1 of this skill (read board, find ready tickets, present plan, get approval, dispatch).
-4. **If all tickets are `done`** — present the `/merge-work` plan: show branches to merge, get approval, merge in dependency order.
+4. **If all tickets are `done`** — present the `/pa-merge-work` plan: show branches to merge, get approval, merge in dependency order.
 5. **If all remaining tickets are `blocked`** — stop and explain the blockers to the user.
 
 The user approves at each checkpoint but does not need to manually invoke each skill.

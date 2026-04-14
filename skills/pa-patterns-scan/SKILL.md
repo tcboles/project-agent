@@ -63,12 +63,12 @@ This phase is identical to `pa-patterns-capture` Phase 0. Copy the behavior exac
 5. If `wiki.enabled` is `false`:
    ```
    Wiki memory is disabled (wiki.enabled = false in config).
-   Run `/config set wiki.enabled true` to enable it.
+   Run `/pa-config set wiki.enabled true` to enable it.
    ```
    Stop — do not proceed.
 6. Extract `wiki.patterns.enabled` (default: `true`). If `wiki.patterns.enabled` is `false`:
    ```
-   Pattern library is disabled (wiki.patterns.enabled=false). Enable it with `/config set wiki.patterns.enabled true`.
+   Pattern library is disabled (wiki.patterns.enabled=false). Enable it with `/pa-config set wiki.patterns.enabled true`.
    ```
    Stop — do not proceed.
 7. Expand `~` in `wiki.vault_path` to the actual home directory path.
@@ -76,7 +76,7 @@ This phase is identical to `pa-patterns-capture` Phase 0. Copy the behavior exac
    ```
    Vault not found at {vault_path}.
    Run /pa-wiki-ingest once to scaffold the vault, or set a different path with:
-     /config set wiki.vault_path <path>
+     /pa-config set wiki.vault_path <path>
    ```
    Stop.
 9. Read `{vault}/CLAUDE.md` to load vault conventions (if it exists). This is informational — do not fail if absent.

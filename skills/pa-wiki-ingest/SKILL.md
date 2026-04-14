@@ -37,10 +37,10 @@ Load config following the standard two-level merge:
 
 Honor these config fields:
 
-- `wiki.enabled` — if `false`, print "Wiki memory is disabled (wiki.enabled=false). Enable it with `/config set wiki.enabled true`." and stop.
+- `wiki.enabled` — if `false`, print "Wiki memory is disabled (wiki.enabled=false). Enable it with `/pa-config set wiki.enabled true`." and stop.
 - `wiki.vault_path` — path to the vault (supports `~` expansion). Default: `~/projects/obsidian/project-agent`.
 
-If `wiki.vault_path` does not exist on disk: print "Vault not found at {path}. Run PA-002 to scaffold the vault, or set a different path with `/config set wiki.vault_path <path>`." and stop.
+If `wiki.vault_path` does not exist on disk: print "Vault not found at {path}. Run PA-002 to scaffold the vault, or set a different path with `/pa-config set wiki.vault_path <path>`." and stop.
 
 ## Instructions
 
@@ -473,7 +473,7 @@ If the computed `adr-NNN-` prefix conflicts with an existing file (unlikely but 
 
 ### Project not in registry
 
-If `--project {name}` is specified but the project does not appear in `registry.json`, print: "Project '{name}' not found in registry. Run `/plan-project {name}` first or check the spelling." and stop.
+If `--project {name}` is specified but the project does not appear in `registry.json`, print: "Project '{name}' not found in registry. Run `/pa-plan-project {name}` first or check the spelling." and stop.
 
 ### Vault directory creation failure
 

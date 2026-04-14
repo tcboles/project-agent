@@ -1,5 +1,5 @@
 ---
-name: triage
+name: pa-triage
 description: >-
   Fire-and-forget bug triage. Accepts a bug description, launches a background
   triage agent that investigates, creates a ticket, dispatches a fix agent, and
@@ -16,10 +16,10 @@ Accept a bug report and handle it end-to-end in the background.
 ### Step 1: Parse Bug Report
 
 Extract the bug description from the user's input. The input can be:
-- A detailed bug report: `/triage the OAuth callback doesn't redirect — it stays on /auth/callback with a blank screen`
-- A quick note: `/triage login button broken`
-- An error message: `/triage TypeError: Cannot read property 'id' of undefined in UserProfile`
-- A screenshot reference: `/triage the checkout page is missing the price total — see screenshot`
+- A detailed bug report: `/pa-triage the OAuth callback doesn't redirect — it stays on /auth/callback with a blank screen`
+- A quick note: `/pa-triage login button broken`
+- An error message: `/pa-triage TypeError: Cannot read property 'id' of undefined in UserProfile`
+- A screenshot reference: `/pa-triage the checkout page is missing the price total — see screenshot`
 
 Accept whatever the user provides. The triage agent will investigate further.
 
@@ -29,7 +29,7 @@ Accept whatever the user provides. The triage agent will investigate further.
 2. If not, read `.project-agent/registry.json`:
    - If one project exists, use it.
    - If multiple exist, use the most recently active project (most recent `updated_at` on any ticket).
-   - If none exist, tell the user to run `/plan-project` first.
+   - If none exist, tell the user to run `/pa-plan-project` first.
 
 ### Step 3: Load Config
 
@@ -44,7 +44,7 @@ Read config (global + workspace merge). Check triage-specific settings:
 Count currently running triage agents (tickets with `type: "bug"` and `status: "in-progress"`). If at `max_concurrent_triage`, tell the user:
 ```
 Triage queue is full ({N}/{max} active). Your bug has been logged as a ticket
-in backlog and will be picked up when capacity frees. Run /check-status to monitor.
+in backlog and will be picked up when capacity frees. Run /pa-check-status to monitor.
 ```
 In this case, still create the ticket (Step 5 of the triage agent) but set status to `backlog` instead of dispatching.
 
@@ -58,7 +58,7 @@ Agent({
   run_in_background: true,
   prompt: "
     ## Your Role
-    {triage agent definition body from @plugin/agents/triage.md}
+    {triage agent definition body from @plugin/agents/pa-triage.md}
 
     ## Bug Report
     {user's bug description, verbatim}
@@ -106,20 +106,20 @@ Immediately after launching the background agent, confirm to the user:
 
 ```
 Bug triaged → background agent investigating.
-Run /check-status to monitor progress.
+Run /pa-check-status to monitor progress.
 ```
 
 Keep it to one line. The user is rapid-firing — don't interrupt their flow.
 
 ## Handling Multiple Rapid-Fire Bugs
 
-The user may fire `/triage` multiple times in quick succession. Each invocation:
+The user may fire `/pa-triage` multiple times in quick succession. Each invocation:
 1. Launches its own independent background triage agent
 2. Creates its own ticket with a unique ID
 3. Dispatches its own fix agent in its own worktree
 4. Reports back independently when done
 
-There is no queue or batching. Each `/triage` is fully independent. The `max_concurrent_triage` config limits how many run simultaneously — excess bugs get ticketed but not auto-dispatched.
+There is no queue or batching. Each `/pa-triage` is fully independent. The `max_concurrent_triage` config limits how many run simultaneously — excess bugs get ticketed but not auto-dispatched.
 
 ## Important
 
@@ -127,4 +127,4 @@ There is no queue or batching. Each `/triage` is fully independent. The `max_con
 - **Always acknowledge immediately.** One line, then stop. Don't investigate inline.
 - **Always create a ticket**, even if at capacity. The bug is logged regardless of whether it's auto-fixed.
 - **The triage agent handles everything.** The skill just launches it and gets out of the way.
-- **Respect the board.** New tickets integrate into the existing board.json — they show up in `/check-status` alongside planned tickets.
+- **Respect the board.** New tickets integrate into the existing board.json — they show up in `/pa-check-status` alongside planned tickets.

@@ -1,11 +1,11 @@
 ---
-name: recover
+name: pa-recover
 description: >-
   Recover an interrupted orchestration session. Reads the board state, recovers
   from stale agents and incomplete work, and picks up the orchestration loop
   from wherever it stopped. Use when the user asks to "recover project",
   "pick up where we left off", "restart work", or "recover board".
-  Note: /resume is a built-in Claude Code command — this skill uses /recover instead.
+  Note: /resume is a built-in Claude Code command — this skill uses /pa-recover instead.
 ---
 
 # Recover
@@ -22,14 +22,14 @@ Same pattern as other skills:
 
 ### Step 1: Load Config
 
-Read config from global and workspace levels (same as `/assign-work`).
+Read config from global and workspace levels (same as `/pa-assign-work`).
 
 ### Step 2: Deep Reconciliation
 
 This is a more thorough version of the standard board reconciliation, because we're recovering from an unknown interruption point.
 
 1. **Read board.json** for the resolved project.
-2. **Read every ticket file** and reconcile status (same rules as `/check-status`).
+2. **Read every ticket file** and reconcile status (same rules as `/pa-check-status`).
 3. **Detect stale agents:** Any agent showing `busy` is suspect — the session that launched it is gone.
    - Read the agent's `current_ticket`. Check the ticket file:
      - If ticket has handoff notes → agent finished, update ticket to `review`, agent to `idle`
@@ -57,7 +57,7 @@ Show the user what was recovered:
 
 ### Current Board State
 - Done: {N}
-- Review: {N} (ready for /review-board)
+- Review: {N} (ready for /pa-review-board)
 - Backlog: {N} ({M} ready, {K} waiting on deps)
 - Blocked: {N}
 
@@ -65,7 +65,7 @@ Show the user what was recovered:
 - PA-005: @architect: "Should the cache TTL be configurable?" — needs routing
 
 ### Recommended Next Action
-{Based on board state — same logic as /check-status suggestions}
+{Based on board state — same logic as /pa-check-status suggestions}
 ```
 
 ### Step 4: Get Approval and Continue
@@ -73,17 +73,17 @@ Show the user what was recovered:
 **Determine execution mode.** Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merging workspace over global.
 
 - If config `autonomous === true` → set `execution_mode = "autonomous"`, skip the approval prompt below, log `"Autonomous mode (from config) — resuming without approval."`, and jump straight into the re-entry branch logic.
-- Otherwise, ask the user: **"Ready to resume the orchestration loop?"** using `AskUserQuestion`. If they answer yes, also offer a follow-up choice of execution mode for the remainder of the run (autonomous vs. manual), the same way `/plan-project` Phase 6 does. Cache the chosen mode as `execution_mode` and thread it through every sub-skill invocation.
+- Otherwise, ask the user: **"Ready to resume the orchestration loop?"** using `AskUserQuestion`. If they answer yes, also offer a follow-up choice of execution mode for the remainder of the run (autonomous vs. manual), the same way `/pa-plan-project` Phase 6 does. Cache the chosen mode as `execution_mode` and thread it through every sub-skill invocation.
 
 Once approved, determine where to re-enter the loop:
 
-1. **If there are tickets in `review`** → start with the `/review-board` workflow
-2. **If there are ready tickets in `backlog`** → start with the `/assign-work` workflow
+1. **If there are tickets in `review`** → start with the `/pa-review-board` workflow
+2. **If there are ready tickets in `backlog`** → start with the `/pa-assign-work` workflow
 3. **If there are blocked tickets with unanswered questions** → route the questions first (dispatch target agents or ask user), then check for ready tickets
-4. **If all tickets are `done`** → proceed to `/merge-work` workflow
+4. **If all tickets are `done`** → proceed to `/pa-merge-work` workflow
 5. **If all remaining tickets are `blocked` with no questions to route** → report blockers and stop
 
-Continue the full orchestration loop from there (assign → review → assign → merge), same as `/plan-project` Phase 7.
+Continue the full orchestration loop from there (assign → review → assign → merge), same as `/pa-plan-project` Phase 7.
 
 ## Important
 

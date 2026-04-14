@@ -32,7 +32,7 @@ claude --plugin-dir /path/to/project-agent
 ## Quick Start
 
 ```
-/plan-project mobile-app
+/pa-plan-project mobile-app
 ```
 
 Claude asks clarifying questions about your project, designs the architecture, and generates a full board of dependency-ordered tickets. You review and approve the plan.
@@ -42,24 +42,24 @@ Once approved, Claude takes over. It orchestrates the full lifecycle autonomousl
 You can check in at any time:
 
 ```
-/check-status mobile-app     # see what's done, in progress, or blocked
+/pa-check-status mobile-app     # see what's done, in progress, or blocked
 ```
 
 Individual skills are also available if you want manual control over a specific step:
 
 ```
-/assign-work mobile-app      # dispatch ready tickets to agents
-/review-board mobile-app     # run code reviews on completed tickets
-/merge-work mobile-app       # merge finished worktrees into main
-/update-ticket PA-003 ...    # modify a ticket mid-flight
-/triage login button broken  # fire-and-forget bug triage
+/pa-assign-work mobile-app      # dispatch ready tickets to agents
+/pa-review-board mobile-app     # run code reviews on completed tickets
+/pa-merge-work mobile-app       # merge finished worktrees into main
+/pa-update-ticket PA-003 ...    # modify a ticket mid-flight
+/pa-triage login button broken  # fire-and-forget bug triage
 ```
 
-Found a bug while reviewing output? Just fire `/triage` with a description — a background agent investigates, creates a ticket, dispatches a fix, and verifies it. You can rapid-fire multiple `/triage` commands without waiting.
+Found a bug while reviewing output? Just fire `/pa-triage` with a description — a background agent investigates, creates a ticket, dispatches a fix, and verifies it. You can rapid-fire multiple `/pa-triage` commands without waiting.
 
 ## Skills
 
-### `/plan-project [name]`
+### `/pa-plan-project [name]`
 
 The main entry point. Provide a project description and Claude will:
 
@@ -69,34 +69,34 @@ The main entry point. Provide a project description and Claude will:
 4. Generate dependency-ordered tickets with full context for autonomous work
 5. Present the plan for your approval before finalizing
 
-### `/assign-work [project-name]`
+### `/pa-assign-work [project-name]`
 
 Reads the board, finds tickets whose dependencies are satisfied, matches them to the right agent type, and launches subagents in parallel (up to `max_concurrent_agents`, default 6). Each agent works in an isolated git worktree to prevent conflicts.
 
-### `/check-status [project-name]`
+### `/pa-check-status [project-name]`
 
 Displays the board state. Without a project name, shows an overview of all projects in the workspace. With a name, drills into that project showing tickets grouped by status, agent utilization, blockers, and suggested next actions.
 
-### `/review-board [project-name]`
+### `/pa-review-board [project-name]`
 
 Quality gate. Dispatches the reviewer agent against all tickets in "review" status. Approved tickets move to "done". Rejected tickets go back to "backlog" with review feedback attached so the next developer agent knows exactly what to fix.
 
-### `/merge-work [project-name]`
+### `/pa-merge-work [project-name]`
 
 Merges completed agent worktrees into the main branch. Merges in dependency order, runs tests after each merge, and handles conflicts (auto-resolve trivial ones, flag others for manual intervention). Creates a restore tag before starting.
 
-### `/update-ticket [ticket-id] [operation]`
+### `/pa-update-ticket [ticket-id] [operation]`
 
 Modify tickets after planning without re-planning the entire project:
 
-- **Add context**: `/update-ticket PA-003 add context: The API requires OAuth2 tokens`
-- **Reprioritize**: `/update-ticket PA-003 priority P0`
-- **Change status**: `/update-ticket PA-003 status blocked`
-- **Split**: `/update-ticket PA-003 split`
-- **Reassign**: `/update-ticket PA-003 category frontend-dev`
-- **Edit**: `/update-ticket PA-003 edit`
+- **Add context**: `/pa-update-ticket PA-003 add context: The API requires OAuth2 tokens`
+- **Reprioritize**: `/pa-update-ticket PA-003 priority P0`
+- **Change status**: `/pa-update-ticket PA-003 status blocked`
+- **Split**: `/pa-update-ticket PA-003 split`
+- **Reassign**: `/pa-update-ticket PA-003 category frontend-dev`
+- **Edit**: `/pa-update-ticket PA-003 edit`
 
-### `/triage [bug description]`
+### `/pa-triage [bug description]`
 
 Fire-and-forget bug triage. Accepts any bug description — from a detailed report to a quick "login broken" — and handles it entirely in the background:
 
@@ -106,15 +106,15 @@ Fire-and-forget bug triage. Accepts any bug description — from a detailed repo
 4. Verifies the fix (runs tests, checks acceptance criteria)
 5. Reports back with the result
 
-You can rapid-fire multiple `/triage` commands. Each runs independently in the background. The `triage.max_concurrent_triage` config controls how many run simultaneously (default 4) — excess bugs are ticketed for later.
+You can rapid-fire multiple `/pa-triage` commands. Each runs independently in the background. The `triage.max_concurrent_triage` config controls how many run simultaneously (default 4) — excess bugs are ticketed for later.
 
-### `/config [show|set|reset]`
+### `/pa-config [show|set|reset]`
 
 View or modify project-agent settings. See [Configuration](#configuration) for details.
 
 ## Agents
 
-Five default agents ship with the plugin. `/plan-project` can create additional project-specific agents when needed.
+Five default agents ship with the plugin. `/pa-plan-project` can create additional project-specific agents when needed.
 
 | Agent | Role | Writes Code? |
 |-------|------|:------------:|
@@ -254,7 +254,7 @@ To reduce parallelism (e.g., on a slower machine), set `max_concurrent_agents` t
 ```
 backlog → assigned → in-progress → review → done
                          ↓                    ↑
-                      blocked          (via /review-board)
+                      blocked          (via /pa-review-board)
                          ↓
                    (manual unblock)
                          ↓
@@ -276,12 +276,12 @@ When an agent finishes a ticket, it writes a `## Handoff Notes` section document
 
 ## How It Works Under the Hood
 
-1. `/plan-project` generates `.project-agent/` with `board.json`, ticket files, and learnings
-2. `/assign-work` reads the board, resolves dependencies, and launches subagents via Claude Code's Agent tool with `isolation: "worktree"`
+1. `/pa-plan-project` generates `.project-agent/` with `board.json`, ticket files, and learnings
+2. `/pa-assign-work` reads the board, resolves dependencies, and launches subagents via Claude Code's Agent tool with `isolation: "worktree"`
 3. Each agent receives: its role definition, the ticket content, handoff notes from dependencies, and all relevant learnings
 4. Agents work autonomously in isolated worktrees, then report back
-5. `/review-board` runs the reviewer agent for quality gating
-6. `/merge-work` integrates worktrees back into main with conflict detection and test verification
+5. `/pa-review-board` runs the reviewer agent for quality gating
+6. `/pa-merge-work` integrates worktrees back into main with conflict detection and test verification
 7. A `PreToolUse` hook logs all Edit/Write/Bash operations to `.project-agent/activity.log` for observability
 
 ## Project Structure

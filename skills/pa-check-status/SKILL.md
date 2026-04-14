@@ -1,5 +1,5 @@
 ---
-name: check-status
+name: pa-check-status
 description: >-
   Shows current project board state — what's done, in progress, blocked, and
   queued. Use when the user asks to "check status", "show board", "what's the
@@ -19,9 +19,9 @@ This system supports **multiple projects per workspace**:
 
 ## Project Resolution
 
-1. If the user specified a project name (e.g., `/check-status mobile-app`), show that project.
+1. If the user specified a project name (e.g., `/pa-check-status mobile-app`), show that project.
 2. If not, read `.project-agent/registry.json`:
-   - If no registry exists, tell the user to run `/plan-project` first.
+   - If no registry exists, tell the user to run `/pa-plan-project` first.
    - If one project exists, show it.
    - If multiple exist, show the **all-projects overview** first, then ask if they want to drill into one.
 
@@ -37,7 +37,7 @@ When multiple projects exist and no name was given:
 | mobile-app | active | 5/12 (42%) | 2 | 1 |
 | marketing-site | active | 0/8 (0%) | 0 | 0 |
 
-Run `/check-status {name}` to see details for a specific project.
+Run `/pa-check-status {name}` to see details for a specific project.
 ```
 
 ## Single Project View
@@ -109,8 +109,8 @@ Only show the reconciliation section if changes were made.
 ```
 
 4. **Suggest next action.** Based on the board state:
-   - If there are ready tickets: suggest running `/assign-work {name}`
-   - If all tickets are done: congratulate and suggest `/review-board {name}` or `/merge-work {name}`
+   - If there are ready tickets: suggest running `/pa-assign-work {name}`
+   - If all tickets are done: congratulate and suggest `/pa-review-board {name}` or `/pa-merge-work {name}`
    - If everything is blocked: explain the dependency chain and suggest manual intervention
    - If agents are busy: suggest waiting or checking back later
 

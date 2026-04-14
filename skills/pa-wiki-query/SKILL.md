@@ -2,7 +2,7 @@
 name: pa-wiki-query
 description: >-
   Search the project-agent wiki vault for pages matching a query. Returns ranked
-  results with excerpts. Used directly by users and programmatically by /assign-work
+  results with excerpts. Used directly by users and programmatically by /pa-assign-work
   to inject relevant context into agent prompts. Use when someone asks "check the
   wiki", "what does the wiki say about...", or when dispatching agents that need
   prior knowledge about a topic.
@@ -38,7 +38,7 @@ Search the project-agent Obsidian vault for wiki pages matching a query and retu
 ## Wiki Query Results
 
 Wiki memory is disabled (wiki.enabled = false in config).
-Run `/config set wiki.enabled true` to enable it.
+Run `/pa-config set wiki.enabled true` to enable it.
 ```
 
 Then stop — do not search or log.
@@ -205,7 +205,7 @@ Append a new entry to `{vault}/log.md` **at the top of the file** (reverse-chron
 ```
 
 Rules:
-- Use `manual` trigger if called by a user directly. Use `dispatch` trigger if called programmatically (e.g., by `/assign-work`).
+- Use `manual` trigger if called by a user directly. Use `dispatch` trigger if called programmatically (e.g., by `/pa-assign-work`).
 - "Answer surfaced: yes" if `Results > 0`. "Answer surfaced: no (gap noted)" if `Results: 0`.
 - Wikilinks use vault-relative paths: `[[wiki/concepts/slug|Title]]` or `[[projects/{name}/gotchas/slug|Title]]`.
 - If `log.md` does not exist yet, create it with the entry as the only content.
@@ -243,7 +243,7 @@ Results: 2
 - Scope: global
 - Tickets: [PA-001, PA-003]
 - Tags: [tool/git-worktree, category/concept]
-- Excerpt: "Each agent works in an isolated git worktree branched from main. Changes are merged back via /merge-work. This prevents agents from conflicting on the same files."
+- Excerpt: "Each agent works in an isolated git worktree branched from main. Changes are merged back via /pa-merge-work. This prevents agents from conflicting on the same files."
 
 ### Result 2
 - Path: /Users/you/projects/obsidian/project-agent/wiki/gotchas/worktree-branch-collision.md

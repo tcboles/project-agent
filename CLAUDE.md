@@ -106,28 +106,28 @@ Settings are loaded from two levels (workspace overrides global):
 | `triage.default_priority` | `"P1"` | Default priority for triaged bugs |
 | `triage.max_concurrent_triage` | `4` | Max background triage agents simultaneously |
 | `wiki.patterns.enabled` | `true` | Master switch for the patterns library (/pa-patterns-capture, /pa-patterns-scan). When false, those skills no-op with a message. |
-| `dispatch.isolation_mode` | `"auto"` | How `/assign-work` dispatches agents. `"worktree"` = each agent in an isolated git worktree on a `claude-worktree-*` branch (merged back via `/merge-work` Flow A). `"working-tree"` = agents share the main checkout and the orchestrator commits at merge time (Flow B). `"auto"` probes after the first wave and caches the result for the session. |
+| `dispatch.isolation_mode` | `"auto"` | How `/pa-assign-work` dispatches agents. `"worktree"` = each agent in an isolated git worktree on a `claude-worktree-*` branch (merged back via `/pa-merge-work` Flow A). `"working-tree"` = agents share the main checkout and the orchestrator commits at merge time (Flow B). `"auto"` probes after the first wave and caches the result for the session. |
 
 When reading config, load global first, then merge workspace config on top (workspace values override global). If no config file exists at either level, use the defaults above.
 
-Use `/config` to view or change settings (e.g., `/config show`, `/config set max agents to 3`, `/config disable reviewer`).
+Use `/pa-config` to view or change settings (e.g., `/pa-config show`, `/pa-config set max agents to 3`, `/pa-config disable reviewer`).
 
 ## How It Works
 
 ### Core Workflow
-1. **`/plan-project`** — User describes a project (with a name). The skill asks clarifying questions, designs architecture, generates tickets under `.project-agent/projects/{name}/`, and creates any project-specific agents needed.
-2. **`/assign-work [project-name]`** — Reads the board for the specified project (or prompts if multiple exist), finds tickets whose dependencies are satisfied, and dispatches them to subagents in isolated worktrees (up to `max_concurrent_agents` in parallel, default 6).
-3. **`/check-status [project-name]`** — Displays board state. Without args, shows a summary of all projects. With a name, drills into that project.
+1. **`/pa-plan-project`** — User describes a project (with a name). The skill asks clarifying questions, designs architecture, generates tickets under `.project-agent/projects/{name}/`, and creates any project-specific agents needed.
+2. **`/pa-assign-work [project-name]`** — Reads the board for the specified project (or prompts if multiple exist), finds tickets whose dependencies are satisfied, and dispatches them to subagents in isolated worktrees (up to `max_concurrent_agents` in parallel, default 6).
+3. **`/pa-check-status [project-name]`** — Displays board state. Without args, shows a summary of all projects. With a name, drills into that project.
 
 ### Quality & Integration
-4. **`/review-board [project-name]`** — Quality gate for a specific project's completed tickets.
-5. **`/merge-work [project-name]`** — Merges completed worktrees for a specific project.
+4. **`/pa-review-board [project-name]`** — Quality gate for a specific project's completed tickets.
+5. **`/pa-merge-work [project-name]`** — Merges completed worktrees for a specific project.
 
 ### Bug Triage
-6. **`/triage [bug description]`** — Fire-and-forget bug triage. Launches a background triage agent that investigates the bug, creates a ticket, dispatches a fix agent in a worktree, verifies the fix, and reports back. User can rapid-fire multiple `/triage` commands without waiting.
+6. **`/pa-triage [bug description]`** — Fire-and-forget bug triage. Launches a background triage agent that investigates the bug, creates a ticket, dispatches a fix agent in a worktree, verifies the fix, and reports back. User can rapid-fire multiple `/pa-triage` commands without waiting.
 
 ### Ticket Management
-7. **`/update-ticket`** — Modify tickets after planning: add context, reprioritize, split, block, reassign, or edit.
+7. **`/pa-update-ticket`** — Modify tickets after planning: add context, reprioritize, split, block, reassign, or edit.
 
 ## Conventions
 
@@ -135,7 +135,7 @@ Use `/config` to view or change settings (e.g., `/config show`, `/config set max
 - Ticket statuses: `backlog` → `assigned` → `in-progress` → `review` → `done`. Also `blocked`.
 - Agent categories in tickets map directly to agent IDs.
 - All timestamps are ISO 8601 format.
-- Agents work in isolated git worktrees — changes are merged back via `/merge-work`.
+- Agents work in isolated git worktrees — changes are merged back via `/pa-merge-work`.
 - All skills accept an optional `[project-name]` argument. If omitted and multiple projects exist, the skill prompts the user to choose.
 
 ## Source of Truth
@@ -150,7 +150,7 @@ Use `/config` to view or change settings (e.g., `/config show`, `/config set max
 Skills update board.json with corrections before proceeding. This makes the system resilient to interruptions.
 
 ### Recovery
-8. **`/recover [project-name]`** — Recover from an interrupted session. Performs deep reconciliation (resets stale agents, detects orphaned work, routes unanswered questions), presents a recovery report, and re-enters the orchestration loop.
+8. **`/pa-recover [project-name]`** — Recover from an interrupted session. Performs deep reconciliation (resets stale agents, detects orphaned work, routes unanswered questions), presents a recovery report, and re-enters the orchestration loop.
 
 ## Wiki Memory Layer
 
@@ -160,7 +160,7 @@ See README § Wiki Memory Layer for details, config knobs, and the scheduled lin
 
 ### Wiki Context Injection Format
 
-When `/assign-work` queries the wiki before dispatching an agent (Step 5b), the results are injected into the agent's dispatch prompt as a `## Relevant Wiki Context` block immediately after the `### Project Learnings` block. The exact format is:
+When `/pa-assign-work` queries the wiki before dispatching an agent (Step 5b), the results are injected into the agent's dispatch prompt as a `## Relevant Wiki Context` block immediately after the `### Project Learnings` block. The exact format is:
 
 ```
 ## Relevant Wiki Context
@@ -225,22 +225,22 @@ The orchestrator routes questions: dispatches the target agent with the question
 ## Typical Session Flow
 
 ```
-/plan-project mobile-app    → generates .project-agent/projects/mobile-app/
-/plan-project marketing-site → generates .project-agent/projects/marketing-site/
-/assign-work mobile-app     → dispatches first wave for mobile app
-/assign-work marketing-site → dispatches first wave for marketing site (can run in parallel)
-/check-status               → overview of all projects
-/check-status mobile-app    → drill into mobile app
-/review-board mobile-app    → review completed mobile app tickets
-/merge-work mobile-app      → integrate done tickets into main branch
+/pa-plan-project mobile-app    → generates .project-agent/projects/mobile-app/
+/pa-plan-project marketing-site → generates .project-agent/projects/marketing-site/
+/pa-assign-work mobile-app     → dispatches first wave for mobile app
+/pa-assign-work marketing-site → dispatches first wave for marketing site (can run in parallel)
+/pa-check-status               → overview of all projects
+/pa-check-status mobile-app    → drill into mobile app
+/pa-review-board mobile-app    → review completed mobile app tickets
+/pa-merge-work mobile-app      → integrate done tickets into main branch
 ```
 
 ### Autonomous Execution
 
-After `/plan-project` finishes writing the plan, the skill asks how to proceed:
+After `/pa-plan-project` finishes writing the plan, the skill asks how to proceed:
 
 1. **Run autonomously** — dispatch, review, and merge without further approval prompts
 2. **Approve each step** — prompt before each stage (default, current behavior)
 3. **Refine the plan** — iterate on tickets first
 
-Picking option 1 runs the full `/assign-work` → `/review-board` → `/merge-work` loop with no further blocking prompts. To make this the default, set `autonomous: true` in workspace or global config. Every skipped approval gate still prints its plan table to stdout, so the user has a full audit trail on scrollback. Merge conflicts and `@user` questions from agents still pause the loop — autonomous mode only skips approval prompts, not genuine human-required inputs.
+Picking option 1 runs the full `/pa-assign-work` → `/pa-review-board` → `/pa-merge-work` loop with no further blocking prompts. To make this the default, set `autonomous: true` in workspace or global config. Every skipped approval gate still prints its plan table to stdout, so the user has a full audit trail on scrollback. Merge conflicts and `@user` questions from agents still pause the loop — autonomous mode only skips approval prompts, not genuine human-required inputs.

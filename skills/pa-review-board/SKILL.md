@@ -1,5 +1,5 @@
 ---
-name: review-board
+name: pa-review-board
 description: >-
   Quality gate for completed work. Runs the reviewer agent against all tickets
   in "review" status, producing review documents with verdicts. Tickets that pass
@@ -13,11 +13,11 @@ Run automated code reviews on all completed tickets before promoting them to `do
 
 ## Project Resolution
 
-1. If the user specified a project name (e.g., `/review-board mobile-app`), use it.
+1. If the user specified a project name (e.g., `/pa-review-board mobile-app`), use it.
 2. If not, read `.project-agent/registry.json` from the cwd.
    - If only one project exists, use it.
    - If multiple exist, ask the user which one.
-   - If none exist, tell the user to run `/plan-project` first.
+   - If none exist, tell the user to run `/pa-plan-project` first.
 
 Project data paths:
 - Board: `{cwd}/.project-agent/projects/{name}/board.json`
@@ -29,7 +29,7 @@ Default agent definitions (like `agents/reviewer.md`) live in the plugin directo
 
 ### Step 1: Read Board State
 
-Read the board.json for the resolved project. Identify all tickets with `status === "review"`. If none exist, tell the user there's nothing to review and suggest running `/assign-work` or `/check-status`.
+Read the board.json for the resolved project. Identify all tickets with `status === "review"`. If none exist, tell the user there's nothing to review and suggest running `/pa-assign-work` or `/pa-check-status`.
 
 ### Step 2: Gather Context for Each Ticket
 
@@ -43,7 +43,7 @@ For each ticket in review:
 
 Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merge workspace over global. Check if `agents.reviewer.enabled` is `false` — if so, skip reviews and move tickets directly from `review` to `done`.
 
-**Determine execution mode.** If `/review-board` was invoked from `/plan-project` Phase 7, the caller passes an `execution_mode`. Otherwise, read `autonomous` from config:
+**Determine execution mode.** If `/pa-review-board` was invoked from `/pa-plan-project` Phase 7, the caller passes an `execution_mode`. Otherwise, read `autonomous` from config:
 - If `autonomous === true` → `execution_mode = "autonomous"`
 - Otherwise → `execution_mode = "manual"`
 
@@ -151,7 +151,7 @@ Show a summary:
 
 ### Next Steps
 - {N} tickets approved and moved to done
-- {M} tickets sent back for rework (will be picked up by /assign-work)
+- {M} tickets sent back for rework (will be picked up by /pa-assign-work)
 - {K} tickets blocked (need manual review)
 ```
 
@@ -160,8 +160,8 @@ Show a summary:
 **Do not stop here.** After reporting review results, automatically continue:
 
 1. **Reconcile the board** — tickets that were approved are now `done`, which may unblock dependent tickets.
-2. **If there are ready tickets** (status `backlog` with all dependencies `done`, including reworked tickets sent back by review) — proceed to the `/assign-work` workflow: present what you'll dispatch, get approval, launch agents.
-3. **If all tickets are `done`** — present the `/merge-work` plan: show branches to merge, get approval, merge in dependency order.
+2. **If there are ready tickets** (status `backlog` with all dependencies `done`, including reworked tickets sent back by review) — proceed to the `/pa-assign-work` workflow: present what you'll dispatch, get approval, launch agents.
+3. **If all tickets are `done`** — present the `/pa-merge-work` plan: show branches to merge, get approval, merge in dependency order.
 4. **If all remaining tickets are `blocked`** — stop and explain the blockers to the user.
 
 The user approves at each checkpoint but does not need to manually invoke each skill.

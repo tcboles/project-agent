@@ -1,5 +1,5 @@
 ---
-name: plan-project
+name: pa-plan-project
 description: >-
   Plan a new project from scratch. Gathers context from the user, asks clarifying
   questions, designs architecture, generates tickets, and creates specialized
@@ -228,21 +228,21 @@ Handle the answer:
 
 Once `execution_mode` is set, **you own the board**. Drive it to completion by running the orchestration loop.
 
-> **Wiki hooks are inherited from `/assign-work`.** The pre-dispatch wiki query (Step 5b) and post-completion wiki ingest (Step 6b) defined in `skills/assign-work/SKILL.md` fire automatically when you follow the `/assign-work` workflow below. No duplicate logic needed here — just follow that workflow and the hooks run as part of it.
+> **Wiki hooks are inherited from `/pa-assign-work`.** The pre-dispatch wiki query (Step 5b) and post-completion wiki ingest (Step 6b) defined in `skills/pa-assign-work/SKILL.md` fire automatically when you follow the `/pa-assign-work` workflow below. No duplicate logic needed here — just follow that workflow and the hooks run as part of it.
 
-1. **Dispatch ready tickets** — follow the `/assign-work` workflow: reconcile the board, find tickets with satisfied dependencies, present what you're about to dispatch, get user approval (unless `execution_mode === "autonomous"`), then launch agents.
+1. **Dispatch ready tickets** — follow the `/pa-assign-work` workflow: reconcile the board, find tickets with satisfied dependencies, present what you're about to dispatch, get user approval (unless `execution_mode === "autonomous"`), then launch agents.
 2. **Wait for agents to complete** — update board.json as each agent finishes.
-3. **Review completed work** — follow the `/review-board` workflow: run the reviewer agent against tickets in `review` status. Approved tickets move to `done`; rejected tickets go back to `backlog` with feedback.
+3. **Review completed work** — follow the `/pa-review-board` workflow: run the reviewer agent against tickets in `review` status. Approved tickets move to `done`; rejected tickets go back to `backlog` with feedback.
 4. **Loop** — after reviews, check if new tickets are now ready (their dependencies just moved to `done`). If so, go back to step 1. Continue until:
    - All tickets are `done` → proceed to step 5
    - All remaining tickets are `blocked` → stop and explain the blockers to the user
-5. **Merge** — once all tickets are done, follow the `/merge-work` workflow: present the merge plan, get approval (unless `execution_mode === "autonomous"` and there are no conflicts), merge worktrees in dependency order.
+5. **Merge** — once all tickets are done, follow the `/pa-merge-work` workflow: present the merge plan, get approval (unless `execution_mode === "autonomous"` and there are no conflicts), merge worktrees in dependency order.
 
 **At each checkpoint, the plan table is still printed to stdout** so the user has an audit trail — `execution_mode === "autonomous"` only skips the blocking `AskUserQuestion`, not the summary. In `"manual"` mode, present the plan and get user approval before proceeding at each gate.
 
 **Autonomous mode does NOT bypass `@user` questions from agents or merge conflicts.** Those still pause the loop for human input — they are genuine blockers, not approval gates.
 
-If the user interrupts or the session ends, the board state is preserved. The user can resume by running `/assign-work` or `/check-status` to pick up where things left off.
+If the user interrupts or the session ends, the board state is preserved. The user can resume by running `/pa-assign-work` or `/pa-check-status` to pick up where things left off.
 
 ## Important
 

@@ -42,11 +42,11 @@ Load config via the standard two-level merge:
 
 Honor these config fields:
 
-- `wiki.enabled` — if `false`, print "Wiki memory is disabled (wiki.enabled=false). Enable it with `/config set wiki.enabled true`." and stop.
-- `wiki.patterns.enabled` — if `false`, print "Pattern library is disabled (wiki.patterns.enabled=false). Enable it with `/config set wiki.patterns.enabled true`." and stop. Missing key defaults to `true`.
+- `wiki.enabled` — if `false`, print "Wiki memory is disabled (wiki.enabled=false). Enable it with `/pa-config set wiki.enabled true`." and stop.
+- `wiki.patterns.enabled` — if `false`, print "Pattern library is disabled (wiki.patterns.enabled=false). Enable it with `/pa-config set wiki.patterns.enabled true`." and stop. Missing key defaults to `true`.
 - `wiki.vault_path` — path to the vault (supports `~` expansion). Default: `~/projects/obsidian/project-agent`.
 
-If `wiki.vault_path` does not exist on disk: print "Vault not found at {path}. Run `/pa-wiki-ingest` once to scaffold the vault, or set a different path with `/config set wiki.vault_path <path>`." and stop.
+If `wiki.vault_path` does not exist on disk: print "Vault not found at {path}. Run `/pa-wiki-ingest` once to scaffold the vault, or set a different path with `/pa-config set wiki.vault_path <path>`." and stop.
 
 ## Instructions
 
@@ -61,12 +61,12 @@ If `wiki.vault_path` does not exist on disk: print "Vault not found at {path}. R
 5. If `wiki.enabled` is `false`:
    ```
    Wiki memory is disabled (wiki.enabled = false in config).
-   Run `/config set wiki.enabled true` to enable it.
+   Run `/pa-config set wiki.enabled true` to enable it.
    ```
    Stop — do not proceed.
 6. Extract `wiki.patterns.enabled` (default: `true`). If `wiki.patterns.enabled` is `false`:
    ```
-   Pattern library is disabled (wiki.patterns.enabled=false). Enable it with `/config set wiki.patterns.enabled true`.
+   Pattern library is disabled (wiki.patterns.enabled=false). Enable it with `/pa-config set wiki.patterns.enabled true`.
    ```
    Stop — do not proceed.
 7. Expand `~` in `wiki.vault_path` to the actual home directory path.
@@ -74,7 +74,7 @@ If `wiki.vault_path` does not exist on disk: print "Vault not found at {path}. R
    ```
    Vault not found at {vault_path}.
    Run /pa-wiki-ingest once to scaffold the vault, or set a different path with:
-     /config set wiki.vault_path <path>
+     /pa-config set wiki.vault_path <path>
    ```
    Stop.
 9. Read `{vault}/CLAUDE.md` to load vault conventions (if it exists). This is informational — do not fail if absent.

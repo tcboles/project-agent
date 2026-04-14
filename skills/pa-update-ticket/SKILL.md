@@ -1,5 +1,5 @@
 ---
-name: update-ticket
+name: pa-update-ticket
 description: >-
   Modify tickets after planning — add context, reprioritize, split, block, or
   close tickets. Use when the user asks to "update ticket", "change ticket",
@@ -30,7 +30,7 @@ The user will specify a ticket ID (e.g., `PA-003`) and an operation. Parse their
 
 Add information to an existing ticket. Append to the `## Notes` section of the ticket file.
 
-Usage: `/update-ticket PA-003 add context: The API requires OAuth2 bearer tokens, see docs at...`
+Usage: `/pa-update-ticket PA-003 add context: The API requires OAuth2 bearer tokens, see docs at...`
 
 1. Read the ticket file.
 2. Append the new context to the `## Notes` section.
@@ -40,17 +40,17 @@ Usage: `/update-ticket PA-003 add context: The API requires OAuth2 bearer tokens
 
 Change a ticket's priority.
 
-Usage: `/update-ticket PA-003 priority P0`
+Usage: `/pa-update-ticket PA-003 priority P0`
 
 1. Update `priority` in both the ticket frontmatter and board.json.
 2. Update `updated_at` in board.json.
-3. Show how this affects the dispatch order (what gets picked up next by `/assign-work`).
+3. Show how this affects the dispatch order (what gets picked up next by `/pa-assign-work`).
 
 ### Change Status
 
 Manually set a ticket's status.
 
-Usage: `/update-ticket PA-003 status blocked`
+Usage: `/pa-update-ticket PA-003 status blocked`
 
 1. Update `status` in both the ticket frontmatter and board.json.
 2. If setting to `blocked`, ask the user for the reason and add it to `## Notes`.
@@ -62,7 +62,7 @@ Usage: `/update-ticket PA-003 status blocked`
 
 Break a large ticket into smaller ones.
 
-Usage: `/update-ticket PA-003 split`
+Usage: `/pa-update-ticket PA-003 split`
 
 1. Read the original ticket thoroughly.
 2. Ask the user how they want it split (or propose a split based on the acceptance criteria).
@@ -80,7 +80,7 @@ Usage: `/update-ticket PA-003 split`
 
 Change which agent type should handle a ticket.
 
-Usage: `/update-ticket PA-003 category frontend-dev`
+Usage: `/pa-update-ticket PA-003 category frontend-dev`
 
 1. Update `category` in both the ticket frontmatter and board.json.
 2. Verify the target agent exists (check both `@plugin/agents/` and `.project-agent/projects/{name}/agents/`). If not, warn the user.
@@ -90,7 +90,7 @@ Usage: `/update-ticket PA-003 category frontend-dev`
 
 Open the ticket for full editing. Read the ticket, show its contents, and ask the user what to change.
 
-Usage: `/update-ticket PA-003 edit`
+Usage: `/pa-update-ticket PA-003 edit`
 
 1. Read and display the ticket contents.
 2. Ask the user what sections to modify.

@@ -1,5 +1,5 @@
 ---
-name: merge-work
+name: pa-merge-work
 description: >-
   Land completed work into the main branch. In worktree mode, merges agent
   branches back with conflict detection. In working-tree mode, commits the
@@ -17,11 +17,11 @@ The mode is resolved automatically from session state or config.
 
 ## Project Resolution
 
-1. If the user specified a project name (e.g., `/merge-work mobile-app`), use it.
+1. If the user specified a project name (e.g., `/pa-merge-work mobile-app`), use it.
 2. If not, read `.project-agent/registry.json` from the cwd.
    - If only one project exists, use it.
    - If multiple exist, ask the user which one.
-   - If none exist, tell the user to run `/plan-project` first.
+   - If none exist, tell the user to run `/pa-plan-project` first.
 
 Project data:
 - Board: `{cwd}/.project-agent/projects/{name}/board.json`
@@ -32,7 +32,7 @@ Project data:
 
 Read config from global (`~/.claude/project-agent/config.json`) and workspace (`{cwd}/.project-agent/config.json`), merging workspace over global. Defaults: `autonomous: false`, `dispatch.isolation_mode: "auto"`.
 
-**Determine execution mode.** If `/merge-work` was invoked from `/plan-project` Phase 7, the caller passes an `execution_mode`. Otherwise, read `autonomous` from config:
+**Determine execution mode.** If `/pa-merge-work` was invoked from `/pa-plan-project` Phase 7, the caller passes an `execution_mode`. Otherwise, read `autonomous` from config:
 - If `autonomous === true` → `execution_mode = "autonomous"`
 - Otherwise → `execution_mode = "manual"`
 
@@ -40,7 +40,7 @@ Read config from global (`~/.claude/project-agent/config.json`) and workspace (`
 
 The merge flow depends on which mode the agents dispatched under:
 
-1. If `session.isolation_mode` was set by a prior `/assign-work` invocation in this session, use it.
+1. If `session.isolation_mode` was set by a prior `/pa-assign-work` invocation in this session, use it.
 2. Otherwise, read `dispatch.isolation_mode` from config:
    - `"worktree"` → use worktree mode
    - `"working-tree"` → use working-tree mode

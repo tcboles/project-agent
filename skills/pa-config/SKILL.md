@@ -1,5 +1,5 @@
 ---
-name: config
+name: pa-config
 description: >-
   View or modify project-agent configuration. Use when the user asks to
   "show config", "change config", "set max agents", "disable reviewer",
@@ -69,7 +69,7 @@ Parse the user's intent and execute one of:
 
 ### Show Config
 
-Usage: `/config`, `/config show`
+Usage: `/pa-config`, `/pa-config show`
 
 1. Read global config from `~/.claude/project-agent/config.json` (if it exists).
 2. Read workspace config from `{cwd}/.project-agent/config.json` (if it exists).
@@ -104,7 +104,7 @@ Usage: `/config`, `/config show`
 
 ### Set a Value
 
-Usage: `/config set max_concurrent_agents 3`, `/config set agents.reviewer.enabled false`, `/config disable reviewer`, `/config use opus for architect`
+Usage: `/pa-config set max_concurrent_agents 3`, `/pa-config set agents.reviewer.enabled false`, `/pa-config disable reviewer`, `/pa-config use opus for architect`
 
 1. Parse the setting name and new value from the user's input. Handle natural language:
    - "disable reviewer" → `agents.reviewer.enabled = false`
@@ -133,7 +133,7 @@ Effective config now has reviewer disabled.
 
 ### Reset Config
 
-Usage: `/config reset`, `/config reset workspace`
+Usage: `/pa-config reset`, `/pa-config reset workspace`
 
 1. If "global" — delete `~/.claude/project-agent/config.json` (but keep `learnings.json`).
 2. If "workspace" or unspecified — delete `{cwd}/.project-agent/config.json`.
